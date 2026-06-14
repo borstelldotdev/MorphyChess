@@ -135,16 +135,16 @@ value class BoardMeta(val value: ULong) {
                 else -> 0x00uL
             }
             return BoardMeta(
-                fullMove.toULong()                                          // B0–1 : full move
-                        or (halfMove.toULong() shl 16)                             // B1   : half move  (if re-laid out)
-                        or (toMoveBits shl 24)                                    // B3   : to move
+                fullMove.toULong()                                           // B0–1 : full move
+                        or (halfMove.toULong() shl 16)                              // B2   : half move
+                        or (toMoveBits shl 24)                                      // B3  : to move
                         or (enPassantSquare.value.toULong() shl 32)                 // B4   : en passant
-                        or whiteKingsideCastle.toULong(0x01uL shl 40)      // B2   : WK castle
-                        or whiteQueensideCastle.toULong(0x02uL shl 40)     // B2   : WQ castle
-                        or blackKingsideCastle.toULong(0x04uL shl 40)      // B2   : BK castle
-                        or blackQueensideCastle.toULong(0x08uL shl 40)     // B2   : BQ castle
-                        or (whiteKing.value.toULong() shl 48)                       // B6   : white king
-                        or (blackKing.value.toULong() shl 56)                       // B7   : black king
+                        or whiteKingsideCastle.toULong(0x01uL shl 40)       // B5   : WK castle
+                        or whiteQueensideCastle.toULong(0x02uL shl 40)      // B5   : WQ castle
+                        or blackKingsideCastle.toULong(0x04uL shl 40)       // B5   : BK castle
+                        or blackQueensideCastle.toULong(0x08uL shl 40)      // B5   : BQ castle
+                        or (whiteKing.value.toULong() shl 48)                      // B6   : white king
+                        or (blackKing.value.toULong() shl 56)                      // B7   : black king
             )
         }
 

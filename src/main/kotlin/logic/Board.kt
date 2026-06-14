@@ -172,7 +172,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         val moves = mutableListOf<Move>()
         for (x in 0..7) {
             for (y in 0..7) {
-                addMovesForSquare(x, y, moves)
+                addMovesForSquare(Square.of_unsafe(x, y), moves)
             }
         }
         return moves
