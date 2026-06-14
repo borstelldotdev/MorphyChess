@@ -1,5 +1,9 @@
-package main
+package main.gui
 
+import main.logic.Board
+import main.logic.Piece
+import main.logic.PieceType
+import main.logic.Player
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics
