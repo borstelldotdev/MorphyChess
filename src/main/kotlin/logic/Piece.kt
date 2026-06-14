@@ -28,6 +28,8 @@ value class Piece(val value: Int) {
 
     val isEmpty:
             Boolean get() = value == 0
+    val isPopulated:
+            Boolean get() = value != 0
 
     override fun toString():
             String = "main.logic.Piece(${owner} ${PieceType.fromValue(pieceValue)})"
