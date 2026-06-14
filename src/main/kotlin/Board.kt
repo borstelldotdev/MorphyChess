@@ -9,12 +9,14 @@ enum class Player(val value: Int) {
 }
 
 enum class PieceType(val value: Int) {
-    PAWN(100),
-    KNIGHT(300),
-    BISHOP(320),
-    ROOK(500),
-    QUEEN(900),
-    KING(16384); // To prevent overflows
+    PAWN(1),
+    KNIGHT(2),
+    BISHOP(3),
+    ROOK(4),
+    QUEEN(5),
+    KING(6);
+
+
 
     companion object {
         fun fromValue(v: Int) = entries.firstOrNull { it.value == v} ?: error("Unknown piece value: $v")
@@ -39,11 +41,22 @@ value class Piece(val value: Int) {
     override fun toString():
             String = "main.Piece(${owner} ${PieceType.fromValue(pieceValue)})"
 
+    fun toUB(): Int = when {
+        value > 0 -> value
+        value < 0 -> 0x10 - value
+        else -> 0
+    }
+
     companion object {
-        // Sort-of constructor
         fun of(type: PieceType, owner: Player): Piece {
             return Piece(type.value * owner.value)
         }
+
+        fun fromUB(ub: Int): Piece = Piece(
+            when {
+                (ub and 0x10) != 0 -> ub and 0x0F
+                else -> ub
+            })
 
         fun fromChar(ch: Char): Piece {
             return when (ch) {
@@ -112,8 +125,8 @@ enum class SpecialMoveType(val value: Int) {
 
 @JvmInline
 value class Move(val value: Int) {
-    // 0x  00    00   00
-    //     from  to   special move
+    // 0x   00      00      00          00
+    //      from    to      special     captured piece (undo info)
 
     companion object {
         fun of(from: Square, to: Square, specialMoveType: SpecialMoveType): Move =
@@ -123,7 +136,22 @@ value class Move(val value: Int) {
             assert(string.length >= 4)
             val to = Square.fromString(string.slice())
         }*/
+
+        fun withUndo(original: Move, capturedPiece: Piece) =
+            Move(original.value or capturedPiece.toUB())
     }
+
+    val from:
+            Square get() = Square(value and 0xFF)
+
+    val to:
+            Square get() = Square((value shr 8) and 0xFF)
+
+    val specialMoveType:
+            Int get() = (value shr 16) and 0xFF
+
+    val capturedPiece:
+            Piece get() = Piece.fromUB(value shr 24) // `and` redundant since `int` is 32 bits
 }
 
 
@@ -344,7 +372,25 @@ class Board(val data: BoardData, val meta: BoardMeta) {
         return moves
     }
 
+    fun generateLegalMoves(): List<Move> {
+        val pseudoLegal = generateLegalMoves()
+        return pseudoLegal
+    }
 
+    fun perft(depth: Int): Int {
+        // PERFormance Test, move path enumeration
+        // with bulk counting
+        val legalMoves = generateLegalMoves()
+
+        if (depth == 1)
+            return legalMoves.size
+
+        var sum = 0
+        for (move in legalMoves) {
+
+        }
+        return sum
+    }
 
 
     override fun toString(): String {
