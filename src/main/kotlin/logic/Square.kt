@@ -11,7 +11,15 @@ value class Square(val value: Int) {
             Int get() = (value and 0x70) shr 4
 
     fun offset(xOffset: Int, yOffset: Int): Square {
-        return Square((value + xOffset + (yOffset shl 4)) and 0x77)
+        return of(x + xOffset, y + yOffset)
+    }
+
+    fun xOffset(xOffset: Int): Square {
+        return of(x + xOffset, y)
+    }
+
+    fun yOffset(yOffset: Int): Square {
+        return of(x, y + yOffset)
     }
 
     companion object {
