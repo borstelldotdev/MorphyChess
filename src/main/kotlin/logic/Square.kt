@@ -26,6 +26,9 @@ value class Square(val value: Int) {
         return of(x, y + yOffset)
     }
 
+    override fun toString(): String =
+        if (exists) "Square(${"ABCDEFGH"[x]}${"87654321"[y]})" else "Square(Invalid)"
+
     companion object {
         fun of(x: Int, y: Int): Square {
             if (!(x in 0..7 && y in 0..7)) {
@@ -35,7 +38,7 @@ value class Square(val value: Int) {
             return Square((y shl 3) or x or 0x80)
         }
 
-        fun of_unsafe(x: Int, y: Int): Square =
+        fun ofUnsafe(x: Int, y: Int): Square =
             Square((y shl 3) or x or 0x80)
 
 

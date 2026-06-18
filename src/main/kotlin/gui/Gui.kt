@@ -1,19 +1,27 @@
 package main.gui
 
 import main.logic.Board
+import main.logic.Move
 import main.logic.Piece
 import main.logic.PieceType
 import main.logic.Player
+import main.logic.SpecialMoveType
+import main.logic.Square
+import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.event.MouseEvent
+import java.awt.event.MouseListener
+import java.awt.event.MouseMotionListener
 import javax.swing.JFrame
 import javax.swing.JPanel
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.File
 
-class ChessBoard(val board: Board) : JPanel() {
+class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener {
     companion object {
         val pieceSpriteMap: Map<Piece, BufferedImage> = buildMap {
             for (player in Player.entries) {
@@ -28,17 +36,18 @@ class ChessBoard(val board: Board) : JPanel() {
             }
         }
 
+        var selectedSquare: Square? = null
+        var moveFromSquare: Square? = null
+        var moveToSquare:   Square? = null
 
-        // Colors can't be `const`
         val BACKGROUND_COLOR =              Color(48, 48, 48)
-        val LIGHT_SQUARE_COLOR =            Color(255, 206, 158)
-        val DARK_SQUARE_COLOR =             Color(209, 139, 71)
-        val BITBOARD_INCLUDED_COLOR =       Color(54, 112, 207)
-        val BITBOARD_NOT_INCLUDED_COLOR =   Color(191, 62, 55)
-        val HIGHLIGHTED_SQUARE_COLOR =      Color(25, 224, 155)
-        val SELECTED_SQUARE_MODIFIER =      Color(40, 30, 0)
+        val LIGHT_SQUARE_COLOR =            Color(235, 210, 175)
+        val DARK_SQUARE_COLOR =             Color(185, 135, 100)
+        val SELECTED_LIGHT_SQUARE_COLOR =   Color(245, 235, 115)
+        val SELECTED_DARK_SQUARE_COLOR =    Color(220, 190, 75)
         val SELECTED_SQUARE_OUTLINE =       Color(80, 80, 80)
-        val FONT_COLOR =                    Color(255, 255, 2)
+        const val SELECTED_SQUARE_OUTLINE_WIDTH = 4f
+        val FONT_COLOR =                    Color(238, 238, 238)
         val ARROW_COLOR =                   Color(255, 0, 0, 192)
     }
 
@@ -51,6 +60,9 @@ class ChessBoard(val board: Board) : JPanel() {
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
 
+        val g2 = g as Graphics2D
+        g2.stroke = BasicStroke(SELECTED_SQUARE_OUTLINE_WIDTH)
+
         g.font = Font("Arial", Font.PLAIN, 32)
 
         val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4) + 32
@@ -59,13 +71,29 @@ class ChessBoard(val board: Board) : JPanel() {
 
         for (x in 0..7) {
             for (y in 0..7) {
-                g.color = if ((x + y) % 2 == 0) LIGHT_SQUARE_COLOR else DARK_SQUARE_COLOR
+                val isLight = (x + y) % 2 == 0
+                val currentSquare = Square.of(x, y)
+                val isSelected = arrayOf(selectedSquare, moveFromSquare, moveToSquare).contains(currentSquare)
+                g.color = if (isSelected) {
+                    if (isLight) SELECTED_LIGHT_SQUARE_COLOR else SELECTED_DARK_SQUARE_COLOR
+                } else {
+                    if (isLight) LIGHT_SQUARE_COLOR else DARK_SQUARE_COLOR
+                }
+
                 val xPos = boardLeftX + x * Gui.SQUARE_SIZE
                 val yPos = boardTopY + y * Gui.SQUARE_SIZE
 
                 g.fillRect(xPos, yPos,Gui.SQUARE_SIZE, Gui.SQUARE_SIZE)
+                if (currentSquare == selectedSquare) {
+                    g2.color = SELECTED_SQUARE_OUTLINE
+                    val indent = (SELECTED_SQUARE_OUTLINE_WIDTH / 2).toInt()
+                    g2.drawRect(
+                        xPos + indent, yPos + indent,
+                        // No idea why multiplication by two is necessary, just don't touch it
+                        Gui.SQUARE_SIZE - indent * 2, Gui.SQUARE_SIZE - indent * 2)
+                }
 
-                val piece = Piece(board.data[x, y])
+                val piece = board.data[x, y]
 
                 if (piece != Piece.EMPTY) {
                     g.drawImage(pieceSpriteMap[piece], xPos, yPos,
@@ -77,12 +105,61 @@ class ChessBoard(val board: Board) : JPanel() {
         g.color = FONT_COLOR
         g.drawString("JacSchack", boardLeftX, textTopY)
 
+    }
+
+    override fun mouseClicked(e: MouseEvent)  {
+        val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4) + 32
+        val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4)
+        // Out of bounds check is integrated into the safe `Square.of()`
+        val clickedSquare = Square.of(
+            (e.x - boardLeftX) / (Gui.SQUARE_SIZE),
+            (e.y - boardTopY) / (Gui.SQUARE_SIZE)
+        )
+
+        print(clickedSquare)
+        println(" was clicked")
+
+        if (!clickedSquare.exists) return // TODO: process gui buttons
+
+        when (selectedSquare) {
+            null -> {
+                selectedSquare = clickedSquare
+            }
+            clickedSquare -> {
+                selectedSquare = null
+            }
+            else -> {
+                val move = Move.of(selectedSquare!!, clickedSquare, SpecialMoveType.NONE)
+                board.pushMove(move)
+                // TODO(Perform legality check)
+
+                val isLegal = true
+                if (isLegal) {
+                    selectedSquare = null
+                    moveFromSquare = move.from
+                    moveToSquare = move.to
+                }
+
+                // selectedSquare = clickedSquare
+
+            }
+        }
+
+        this.repaint()
+    }
+    override fun mousePressed(e: MouseEvent)  { println("Pressed") }
+    override fun mouseReleased(e: MouseEvent) { println("Released") }
+    override fun mouseEntered(e: MouseEvent)  { }
+    override fun mouseExited(e: MouseEvent)   { }
+    override fun mouseDragged(e: MouseEvent?) { }
+
+    override fun mouseMoved(e: MouseEvent?) {
 
     }
 }
 
 
-class Gui {
+class Gui{
 
     companion object {
         const val SQUARE_SIZE = 60
@@ -95,12 +172,19 @@ class Gui {
 
         val frame = JFrame("JacSchack")
         val board = Board.startingPosition()
+        val chessBoard = ChessBoard(board)
 
         frame.apply {
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             setSize(totalWidth, totalHeight)
-            add(ChessBoard(board))
+            add(chessBoard)
             isVisible = true
+        }
+
+        // Listeners must be attached to the frame, otherwise the coordinates gets messed up
+        chessBoard.apply {
+            addMouseListener(this)
+            addMouseMotionListener(this)
         }
     }
 }
