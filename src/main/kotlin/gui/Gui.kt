@@ -30,7 +30,7 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
                 for (type in PieceType.entries) {
                     val color = player.name.lowercase()
                     val piece = type.name.lowercase()
-                    val img = ImageIO.read(File("assets/$piece-$color.png"))
+                    val img = ImageIO.read(object {}.javaClass.getResourceAsStream("image_assets/$piece-$color.png"))
                     put(Piece.of(type, player), img)
                 }
             }
@@ -73,7 +73,14 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
             for (y in 0..7) {
                 val isLight = (x + y) % 2 == 0
                 val currentSquare = Square.of(x, y)
-                val isSelected = arrayOf(selectedSquare, moveFromSquare, moveToSquare).contains(currentSquare)
+
+                val isSelected = arrayOf(
+                    selectedSquare,
+                    board.stack.lastOrNull()?.from,
+                    board.stack.lastOrNull()?.to
+                )
+                    .contains(currentSquare)
+
                 g.color = if (isSelected) {
                     if (isLight) SELECTED_LIGHT_SQUARE_COLOR else SELECTED_DARK_SQUARE_COLOR
                 } else {
@@ -116,9 +123,6 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
             (e.y - boardTopY) / (Gui.SQUARE_SIZE)
         )
 
-        print(clickedSquare)
-        println(" was clicked")
-
         if (!clickedSquare.exists) return // TODO: process gui buttons
 
         when (selectedSquare) {
@@ -147,8 +151,8 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
 
         this.repaint()
     }
-    override fun mousePressed(e: MouseEvent)  { println("Pressed") }
-    override fun mouseReleased(e: MouseEvent) { println("Released") }
+    override fun mousePressed(e: MouseEvent)  { }
+    override fun mouseReleased(e: MouseEvent) { }
     override fun mouseEntered(e: MouseEvent)  { }
     override fun mouseExited(e: MouseEvent)   { }
     override fun mouseDragged(e: MouseEvent?) { }

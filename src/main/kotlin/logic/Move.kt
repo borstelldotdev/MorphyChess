@@ -46,4 +46,8 @@ value class Move(val value: Int) {
 
     val capturedPiece:
             Piece get() = Piece.fromUB(value shr 24) // `and` redundant since `int` is 32 bits
+
+    override fun toString(): String {
+        return "Move(from: $from, to: $to, special move type: $specialMoveType)"
+    }
 }
