@@ -19,8 +19,10 @@ enum class SpecialMoveType(val value: Int) {
 
 @JvmInline
 value class Move(val value: Int) {
-    // 0x   00      00      00          00
-    //      from    to      special     captured piece (undo info)
+    // MSB <- ... -> LSB
+    // 0x   00                          00          00  00
+    //      captured piece (undo info)  special     to  from
+    // 0 = null move
 
     companion object {
         fun of(from: Square, to: Square, specialMoveType: SpecialMoveType): Move =
@@ -32,7 +34,9 @@ value class Move(val value: Int) {
         }*/
 
         fun withUndo(original: Move, capturedPiece: Piece) =
-            Move(original.value or capturedPiece.toUB())
+            Move(original.value or (capturedPiece.value shl 24))
+
+        val NONE = Move(0)
     }
 
     val from:
@@ -45,9 +49,18 @@ value class Move(val value: Int) {
             Int get() = (value shr 16) and 0xFF
 
     val capturedPiece:
-            Piece get() = Piece.fromUB(value shr 24) // `and` redundant since `int` is 32 bits
+            Piece get() = Piece(value shr 24) // `and` redundant since `int` is 32 bits
+
+    val isNullMove:
+            Boolean get() = value == 0
+    val isValid:
+            Boolean get() = value != 0
 
     override fun toString(): String {
-        return "Move(from: $from, to: $to, special move type: $specialMoveType)"
+        if (isNullMove)
+            return "Move(None)"
+
+        return "Move(from: $from, to: $to, captured piece: $capturedPiece" +
+                (if (specialMoveType != SpecialMoveType.NONE.value) "special move type: $specialMoveType)" else "")
     }
 }

@@ -41,6 +41,7 @@ value class BoardMeta(val value: ULong) {
     fun resetHalfMove(): BoardMeta =
         BoardMeta(value and 0xFF_FF_FF_FF_FF_00_FF_FFuL)
 
+    // TODO: Optimize to move storage, by packing directly
 
     val toMove: Player
         get() = when {

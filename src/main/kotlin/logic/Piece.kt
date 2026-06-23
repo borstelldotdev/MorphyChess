@@ -16,40 +16,37 @@ enum class PieceType(val value: Int) {
 
 @JvmInline
 value class Piece(val value: Int) {
+    // MSB <- ... -> LSB
+    // ... owner-white(1b) owner-black (1b) type(4b)
 
     val owner: Player get() = when {
-        value > 0 -> Player.WHITE
-        value < 0 -> Player.BLACK
-        else    -> Player.NONE
+        value == 0              -> Player.NONE
+        (value and 0x20) != 0   -> Player.WHITE
+        (value and 0x10) != 0   -> Player.BLACK
+        else                    -> Player.NONE
+
     }
 
     val pieceValue:
-            Int get() = value * owner.value
+            Int get() = value and 0xF
 
     val isEmpty:
             Boolean get() = value == 0
     val isPopulated:
             Boolean get() = value != 0
 
-    override fun toString():
-            String = "main.logic.Piece(${owner} ${PieceType.fromValue(pieceValue)})"
+    override fun toString(): String {
+        if (isEmpty) {
+            return "Piece(None)"
+        }
 
-    fun toUB(): Int = when {
-        value > 0 -> value
-        value < 0 -> 0x10 - value
-        else -> 0
+        return "Piece($owner ${PieceType.fromValue(pieceValue)})"
     }
 
     companion object {
         fun of(type: PieceType, owner: Player): Piece {
-            return Piece(type.value * owner.value)
+            return Piece(type.value or owner.value)
         }
-
-        fun fromUB(ub: Int): Piece = Piece(
-            when {
-                (ub and 0x10) != 0 -> ub and 0x0F
-                else -> ub
-            })
 
         fun fromChar(ch: Char): Piece {
             return when (ch) {

@@ -12,6 +12,8 @@ import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
@@ -21,7 +23,7 @@ import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.File
 
-class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener {
+class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener, KeyListener {
     companion object {
         fun loadImage(path: String): BufferedImage {
             val stream = object {}.javaClass.getResourceAsStream(path)
@@ -116,11 +118,13 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
         }
 
         g.color = FONT_COLOR
-        g.drawString("JacSchack", boardLeftX, textTopY)
+        g.drawString("MorphyChess", boardLeftX, textTopY)
 
     }
 
     override fun mouseClicked(e: MouseEvent)  {
+        requestFocusInWindow() // Re-focus panel to keep allowing keyboard events
+
         val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4) + 32
         val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4)
         // Out of bounds check is integrated into the safe `Square.of()`
@@ -157,15 +161,37 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
 
         this.repaint()
     }
+
+    // Mouse events
     override fun mousePressed(e: MouseEvent)  { }
     override fun mouseReleased(e: MouseEvent) { }
     override fun mouseEntered(e: MouseEvent)  { }
     override fun mouseExited(e: MouseEvent)   { }
     override fun mouseDragged(e: MouseEvent?) { }
 
-    override fun mouseMoved(e: MouseEvent?) {
+    override fun mouseMoved(e: MouseEvent?) { }
 
+
+    // Keyboard events
+    override fun keyPressed(e: KeyEvent?) {
+        if (e == null) return
+
+        println(board.stack)
+
+        when (e.keyChar) {
+            'u' -> {
+                // Undo move
+
+                if (board.stack.isNotEmpty()) {
+                    board.popMove()
+                    repaint()
+                }
+            }
+        }
     }
+
+    override fun keyTyped(e: KeyEvent?) { }
+    override fun keyReleased(e: KeyEvent?) { }
 }
 
 
@@ -180,7 +206,7 @@ class Gui{
         val totalWidth: Int = SQUARE_SIZE * 12
         val totalHeight: Int = SQUARE_SIZE * 12
 
-        val frame = JFrame("JacSchack")
+        val frame = JFrame("MorphyChess")
         val board = Board.startingPosition()
         val chessBoard = ChessBoard(board)
 
@@ -193,9 +219,14 @@ class Gui{
 
         // Listeners must be attached to the frame, otherwise the coordinates gets messed up
         chessBoard.apply {
+            isFocusable = true // To allow keyboard events
             addMouseListener(this)
             addMouseMotionListener(this)
+            addKeyListener(this)
         }
+
+        // Focus the board by default
+        chessBoard.requestFocusInWindow()
     }
 }
 

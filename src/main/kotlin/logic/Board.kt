@@ -64,7 +64,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         data.setUnsafe(fromSquare, Piece.EMPTY)
 
         when (move.specialMoveType) {
-            SpecialMoveType.NONE.value -> return
+            SpecialMoveType.NONE.value -> { }
             SpecialMoveType.EN_PASSANT.value -> {
                 // One will be the square the opponents pawn moved from, one the one it moved to
                 // Therefore, no extra verification is required to ensure we aren't removing other pieces
@@ -95,20 +95,20 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun popMove(): Move {
-        val popedMove = stack.removeLast()
-        val fromSquare = popedMove.from; val toSquare = popedMove.to
+        val move = stack.removeLast()
+        val fromSquare = move.from; val toSquare = move.to
 
         val pieceToMove = data.atUnsafe(toSquare)
-        val capturedPiece = popedMove.capturedPiece
+        val capturedPiece = move.capturedPiece
         data.setUnsafe(toSquare, capturedPiece)
         data.setUnsafe(fromSquare, pieceToMove)
 
-        when (popedMove.specialMoveType) {
-            SpecialMoveType.NONE.value -> Unit // Do nothing
+        when (move.specialMoveType) {
+            SpecialMoveType.NONE.value -> { } // Do nothing
             // TODO: impl
         }
 
-        return popedMove
+        return move
     }
 
     fun genSlidingMoves(from: Square, addTo: MutableList<Move>, slidingPatterns: List<Pair<Int, Int>>) {
@@ -179,7 +179,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun generateLegalMoves(): List<Move> {
-        val pseudoLegal = generateLegalMoves()
+        val pseudoLegal = generatePseudoLegalMoves()
         return pseudoLegal
     }
 
