@@ -23,6 +23,12 @@ import java.io.File
 
 class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener {
     companion object {
+        fun loadImage(path: String): BufferedImage {
+            val stream = object {}.javaClass.getResourceAsStream(path)
+                ?: error("Resource not found: $path")
+            return ImageIO.read(stream)
+        }
+
         val pieceSpriteMap: Map<Piece, BufferedImage> = buildMap {
             for (player in Player.entries) {
                 if (player == Player.NONE) continue
@@ -30,7 +36,7 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
                 for (type in PieceType.entries) {
                     val color = player.name.lowercase()
                     val piece = type.name.lowercase()
-                    val img = ImageIO.read(object {}.javaClass.getResourceAsStream("image_assets/$piece-$color.png"))
+                    val img = loadImage("/image_assets/$piece-$color.png")
                     put(Piece.of(type, player), img)
                 }
             }
