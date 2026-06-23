@@ -50,19 +50,18 @@ value class Piece(val value: Int) {
 
         fun fromChar(ch: Char): Piece {
             return when (ch) {
-                'P' -> of(PieceType.PAWN, Player.WHITE)
-                'N' -> of(PieceType.KNIGHT, Player.WHITE)
-                'B' -> of(PieceType.BISHOP, Player.WHITE)
-                'R' -> of(PieceType.ROOK, Player.WHITE)
-                'Q' -> of(PieceType.QUEEN, Player.WHITE)
-                'K' -> of(PieceType.KING, Player.WHITE)
-
-                'p' -> of(PieceType.PAWN, Player.BLACK)
-                'n' -> of(PieceType.KNIGHT, Player.BLACK)
-                'b' -> of(PieceType.BISHOP, Player.BLACK)
-                'r' -> of(PieceType.ROOK, Player.BLACK)
-                'q' -> of(PieceType.QUEEN, Player.BLACK)
-                'k' -> of(PieceType.KING, Player.BLACK)
+                'P' -> WHITE_PAWN
+                'N' -> WHITE_KNIGHT
+                'B' -> WHITE_BISHOP
+                'R' -> WHITE_ROOK
+                'Q' -> WHITE_QUEEN
+                'K' -> WHITE_KING
+                'p' -> BLACK_PAWN
+                'n' -> BLACK_KNIGHT
+                'b' -> BLACK_BISHOP
+                'r' -> BLACK_ROOK
+                'q' -> BLACK_QUEEN
+                'k' -> BLACK_KING
 
                 else -> EMPTY
             }
@@ -70,5 +69,18 @@ value class Piece(val value: Int) {
 
         // Empty square
         val EMPTY = Piece(0)
+
+        val WHITE_PAWN = of(PieceType.PAWN, Player.WHITE)
+        val WHITE_KNIGHT = of(PieceType.KNIGHT, Player.WHITE)
+        val WHITE_BISHOP = of(PieceType.BISHOP, Player.WHITE)
+        val WHITE_ROOK = of(PieceType.ROOK, Player.WHITE)
+        val WHITE_QUEEN = of(PieceType.QUEEN, Player.WHITE)
+        val WHITE_KING = of(PieceType.KING, Player.WHITE)
+        val BLACK_PAWN = of(PieceType.PAWN, Player.BLACK)
+        val BLACK_KNIGHT = of(PieceType.KNIGHT, Player.BLACK)
+        val BLACK_BISHOP = of(PieceType.BISHOP, Player.BLACK)
+        val BLACK_ROOK = of(PieceType.ROOK, Player.BLACK)
+        val BLACK_QUEEN = of(PieceType.QUEEN, Player.BLACK)
+        val BLACK_KING = of(PieceType.KING, Player.BLACK)
     }
 }

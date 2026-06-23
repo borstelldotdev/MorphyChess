@@ -52,6 +52,13 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             Pair(-1, -2),
             Pair(-2, -1),
         )
+
+        val promotionMoveTypes = listOf<SpecialMoveType>(
+            SpecialMoveType.PROMOTE_QUEEN,
+            SpecialMoveType.PROMOTE_KNIGHT,
+            SpecialMoveType.PROMOTE_BISHOP,
+            SpecialMoveType.PROMOTE_ROOK
+        )
     }
 
     fun pushMove(move: Move) {
@@ -118,6 +125,8 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun genSlidingMoves(from: Square, addTo: MutableList<Move>, slidingPatterns: List<Pair<Int, Int>>) {
+        // TODO: fast sliding by directly offsetting
+
         for (slidingPattern in slidingPatterns) {
             var currentSquare = from.offset(slidingPattern.first, slidingPattern.second)
             while (currentSquare.isValid) {
@@ -205,11 +214,45 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun genPawnMoves(from: Square, addTo: MutableList<Move>) {
+        // TODO: captures
+
         val pawn = data[from]
         val moveDirection = when (pawn.owner) {
             Player.WHITE -> -1
             Player.BLACK -> 1
             else -> 0 // Illegal
+        }
+
+        if ((from.y == 1) or (from.y == 6)) {
+            when {
+                (((moveDirection == -1 ) and (from.y == 6)) or
+                ((moveDirection == 1 ) and (from.y == 1))) -> {
+                    val ds = from.yOffset(moveDirection shl 1)
+                    if (data[ds].isEmpty) {
+                        addTo.addLast(Move.of(
+                            from,
+                            from.yOffset(moveDirection shl 1),
+                            SpecialMoveType.NONE
+                        ))
+                    }
+                }
+
+                (((moveDirection == 1 ) and (from.y == 6)) or
+                ((moveDirection == -1 ) and (from.y == 1))) -> {
+                    if (data[from.yOffset(moveDirection)].isEmpty) {
+                        for (promotionType in promotionMoveTypes) {
+                            addTo.addLast(Move.of(
+                                from,
+                                from.yOffset(moveDirection),
+                                promotionType
+                            ))
+                        }
+
+                        // Don't add regular non-promotion moves
+                        return
+                    }
+                }
+            }
         }
 
         if (data[from.yOffset(moveDirection)].isEmpty) {
@@ -260,11 +303,128 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun isInCheck(player: Player): Boolean {
+        val king = when (player) {
+            Player.WHITE -> meta.whiteKing
+            Player.BLACK -> meta.blackKing
+            Player.NONE -> Square.NONE
+        }
+
+
+
+        // Bishop + Queen checks
+
+        for (slidingPattern in bishopSlidingPatterns) {
+            var currentSquare = king.offset(slidingPattern.first, slidingPattern.second)
+            while (currentSquare.isValid) {
+                val piece = data.atUnsafe(currentSquare)
+
+                if (piece.isPopulated) {
+                    if ((piece.owner == meta.toMove) and
+                        ((piece.pieceValue == PieceType.BISHOP.value) or
+                                (piece.pieceValue == PieceType.QUEEN.value))) {
+                            return true
+                    }
+
+                    break
+                }
+
+                currentSquare = currentSquare
+                    .offset(slidingPattern.first, slidingPattern.second)
+            }
+        }
+
+        // Rook + Queen checks
+
+        for (slidingPattern in rookSlidingPatterns) {
+            var currentSquare = king.offset(slidingPattern.first, slidingPattern.second)
+            while (currentSquare.isValid) {
+                val piece = data.atUnsafe(currentSquare)
+
+                if (piece.isPopulated) {
+                    if ((piece.owner == meta.toMove) and
+                        ((piece.pieceValue == PieceType.ROOK.value) or
+                                (piece.pieceValue == PieceType.QUEEN.value))) {
+                        return true
+                    }
+
+                    break
+                }
+
+                currentSquare = currentSquare
+                    .offset(slidingPattern.first, slidingPattern.second)
+            }
+        }
+
+        // Knight checks
+
+        for (slidingPattern in knightSlidingPatterns) {
+            val currentSquare = king.offset(slidingPattern.first, slidingPattern.second)
+            if (currentSquare.isValid) {
+                val piece = data[currentSquare]
+                if (
+                    piece.isPopulated and
+                    (piece.owner == meta.toMove) and
+                    (piece.pieceValue == PieceType.KNIGHT.value)
+                    ) {
+                    return true
+                }
+            }
+        }
+
+        // King "checks"
+
+        for (slidingPattern in kingQueenSlidingPatterns) {
+            val currentSquare = king.offset(slidingPattern.first, slidingPattern.second)
+            if (currentSquare.isValid) {
+                val piece = data[currentSquare]
+                // Opponent check is redundant here, since a player can't have two kings
+                if (
+                    piece.isPopulated and
+                    (piece.pieceValue == PieceType.KING.value)
+                ) {
+                    return true
+                }
+            }
+        }
+
+        // Pawn checks
+
+        when (player) {
+            Player.WHITE -> {
+                // To allow `val` usage
+                run {
+                    val pos = king.offset(1, -1)
+                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN))
+                        return true
+                }
+
+                run {
+                    val pos = king.offset(-1, -1)
+                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN))
+                        return true
+                }
+            }
+            Player.BLACK -> {
+                run {
+                    val pos = king.offset(1, 1)
+                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN))
+                        return true
+                }
+
+                run {
+                    val pos = king.offset(-1, 1)
+                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN))
+                        return true
+                }
+            }
+            else -> {return false}
+        }
+
         return false
-        // TODO: impl
     }
 
     fun isLegal(move: Move): Boolean {
+
         pushMove(move)
         val res = !isInCheck(meta.notToMove)
         popMove()
