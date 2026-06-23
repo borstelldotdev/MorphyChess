@@ -73,8 +73,8 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
 
         g.font = Font("Arial", Font.PLAIN, 32)
 
-        val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4) + 32
-        val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4)
+        val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4)
+        val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4) + 32
         val textTopY = boardTopY - 64
 
         for (x in 0..7) {
