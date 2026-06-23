@@ -37,6 +37,12 @@ value class Move(val value: Int) {
             Move(original.value or (capturedPiece.value shl 24))
 
         val NONE = Move(0)
+
+        val WHITE_KINGSIDE_CASTLE = of(Square.E1, Square.G1, SpecialMoveType.WHITE_CASTLE_KINGSIDE)
+        val WHITE_QUEENSIDE_CASTLE = of(Square.E1, Square.C1, SpecialMoveType.WHITE_CASTLE_QUEENSIDE)
+        val BLACK_KINGSIDE_CASTLE = of(Square.E8, Square.G8, SpecialMoveType.BLACK_CASTLE_KINGSIDE)
+        val BLACK_QUEENSIDE_CASTLE = of(Square.E8, Square.C8, SpecialMoveType.BLACK_CASTLE_QUEENSIDE)
+
     }
 
     val from:

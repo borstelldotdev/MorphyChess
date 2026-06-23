@@ -30,7 +30,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             Pair(-1, -1),
         )
 
-        val queenSlidingPatterns = listOf<Pair<Int, Int>>(
+        val kingQueenSlidingPatterns = listOf<Pair<Int, Int>>(
             Pair(1, 0),
             Pair(-1, 0),
             Pair(0, 1),
@@ -102,7 +102,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         val fromSquare = move.from; val toSquare = move.to
 
         // Change turn
-        meta.setToMove(meta.notToMove)
+        meta = meta.setToMove(meta.notToMove)
 
         val pieceToMove = data.atUnsafe(toSquare)
         val capturedPiece = move.capturedPiece
@@ -147,13 +147,84 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         }
     }
 
+    fun genKingMoves(from: Square, addTo: MutableList<Move>) {
+        val king = data[from]
+        for (slidingPattern in kingQueenSlidingPatterns) {
+            val currentSquare = from.offset(slidingPattern.first, slidingPattern.second)
+            if (currentSquare.isValid) {
+                if (data.atUnsafe(currentSquare).owner != meta.toMove)
+                    addTo.addLast(Move.of(from, currentSquare, SpecialMoveType.NONE))
+            }
+        }
+
+        // TODO: prevent king from castling through check
+
+        when (king.owner) {
+            Player.WHITE -> {
+                if (
+                    meta.whiteKingsideCastle and
+                    data[Square.F1].isEmpty and
+                    data[Square.G1].isEmpty and
+                    !isInCheck(meta.toMove)
+                    ) {
+                    addTo.add(Move.WHITE_KINGSIDE_CASTLE)
+                }
+
+                if (
+                    meta.whiteQueensideCastle and
+                    data[Square.D1].isEmpty and
+                    data[Square.C1].isEmpty and
+                    data[Square.B1].isEmpty and
+                    !isInCheck(meta.toMove)
+                ) {
+                    addTo.add(Move.WHITE_QUEENSIDE_CASTLE)
+                }
+            }
+            Player.BLACK -> {
+                if (
+                    meta.blackKingsideCastle and
+                    data[Square.F8].isEmpty and
+                    data[Square.G8].isEmpty and
+                    !isInCheck(meta.toMove)
+                ) {
+                    addTo.add(Move.BLACK_KINGSIDE_CASTLE)
+                }
+
+                if (
+                    meta.blackQueensideCastle and
+                    data[Square.D8].isEmpty and
+                    data[Square.C8].isEmpty and
+                    data[Square.B8].isEmpty and
+                    !isInCheck(meta.toMove)
+                ) {
+                    addTo.add(Move.BLACK_QUEENSIDE_CASTLE)
+                }
+            }
+            else -> {}
+        }
+    }
+
+    fun genPawnMoves(from: Square, addTo: MutableList<Move>) {
+        val pawn = data[from]
+        val moveDirection = when (pawn.owner) {
+            Player.WHITE -> -1
+            Player.BLACK -> 1
+            else -> 0 // Illegal
+        }
+
+        if (data[from.yOffset(moveDirection)].isEmpty) {
+            // one-step-forward move
+            addTo.addLast(Move.of(from, from.yOffset(moveDirection), SpecialMoveType.NONE))
+        }
+    }
+
     fun addMovesForSquare(square: Square, addTo: MutableList<Move>) {
         val piece = data.atUnsafe(square)
         if (piece.isEmpty or (piece.owner != meta.toMove)) return
 
         when (piece.pieceValue) {
             PieceType.PAWN.value -> {
-                Unit // todo: impl
+                genPawnMoves(square, addTo)
             }
 
             PieceType.KNIGHT.value -> {
@@ -169,7 +240,11 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             }
 
             PieceType.QUEEN.value -> {
-                genSlidingMoves(square, addTo, queenSlidingPatterns)
+                genSlidingMoves(square, addTo, kingQueenSlidingPatterns)
+            }
+
+            PieceType.KING.value -> {
+                genKingMoves(square, addTo)
             }
         }
     }
@@ -184,9 +259,29 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         return moves
     }
 
+    fun isInCheck(player: Player): Boolean {
+        return false
+        // TODO: impl
+    }
+
+    fun isLegal(move: Move): Boolean {
+        pushMove(move)
+        val res = !isInCheck(meta.notToMove)
+        popMove()
+        return res
+    }
+
+
+
     fun generateLegalMoves(): List<Move> {
-        val pseudoLegal = generatePseudoLegalMoves()
-        return pseudoLegal
+        val pseudoLegalMoves = generatePseudoLegalMoves()
+        val legalMoves: MutableList<Move> = mutableListOf()
+        for (pseudoLegalMove in pseudoLegalMoves) {
+            if (isLegal(pseudoLegalMove)) {
+                legalMoves.add(pseudoLegalMove)
+            }
+        }
+        return legalMoves
     }
 
     fun perft(depth: Int): Int {
