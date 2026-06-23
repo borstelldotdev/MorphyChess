@@ -2,6 +2,7 @@ package main
 
 import main.gui.Gui
 import main.tests.runTests
+import tests.performanceTestMovePathEnumeration
 
 const val VERSION = "alpha-1.0"
 
@@ -9,11 +10,11 @@ fun main(args: Array<String>) {
     println()
     println("MorphyChess $VERSION")
     println("https://github.com/borstelldotdev/MorphyChess")
-    println("Usage: java -jar <MorphyChess jar> [mode: (G)ui | (u)ci | (t)est | (m)atch-manager]")
+    println("Usage: java -jar <MorphyChess jar> [mode: (G)ui | (u)ci | (t)est | (p)erformance-test]")
     val mode: String
     if (args.isEmpty()) {
         println("No mode specified, please enter a mode")
-        println("(G)ui | (u)ci | (t)est | (m)atch-manager: ")
+        println("(G)ui | (u)ci | (t)est | (p)erformance-test: ")
         val userInput: String = readln().lowercase()
 
         mode = if (userInput.isEmpty()) {
@@ -30,7 +31,7 @@ fun main(args: Array<String>) {
         mode.startsWith("g") -> mainVisual()
         mode.startsWith("u") -> mainUCI()
         mode.startsWith("t") -> mainTests()
-        mode.startsWith("m") -> mainMatchManager()
+        mode.startsWith("p") -> performanceTestMovePathEnumeration()
     }
 }
 
@@ -55,10 +56,4 @@ fun mainTests () {
 
     println("Executing tests...")
     runTests()
-}
-
-fun mainMatchManager() {
-    println("Starting match manager...")
-
-    // TODO("Implement match manager")
 }

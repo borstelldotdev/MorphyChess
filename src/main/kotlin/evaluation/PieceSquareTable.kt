@@ -31,13 +31,16 @@ value class PieceSquareTable(val value: Array<IntArray>) {
         return value[(player.value shr 3) - gameState.value][x + (y shl 3)]
     }
 
-    companion object {
+    /*companion object {
         fun cloneTable(table: IntArray, staticWeight: Int, flip: Boolean): IntArray {
-            val newTable
+            val newTable = IntArray(64) { 0 }
+            for (sq in 0..63) {
+
+            }
         }
 
         fun createTable(middlegameTable: IntArray, endgameTable: IntArray, staticWeight: Int): PieceSquareTable {
             val
         }
-    }
+    }*/
 }
