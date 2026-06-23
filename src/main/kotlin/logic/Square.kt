@@ -2,10 +2,9 @@ package main.logic
 
 @JvmInline
 value class Square(val value: Int) {
-    // MSB <-   i   0       ttt     fff -> LSB
-    //          invalid     to      from
+    // MSB <-   i   0       yyy             xxx         -> LSB
+    //          invalid     y-coordinate    x-coordinate
     //
-    // TODO: use first 6 bits directly, instead of unpacking to then recombine
 
     val x:
             Int get() = value and 0b0_0_000_111

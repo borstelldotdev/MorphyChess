@@ -41,7 +41,7 @@ value class BoardData(val value: IntArray) {
         if (!square.exists)
             return Piece.EMPTY
 
-        return get(square.x, square.y)
+        return Piece(value[square.value])
     }
 
     operator fun set(x: Int, y: Int, piece: Piece) {
@@ -56,7 +56,7 @@ value class BoardData(val value: IntArray) {
         if (!square.exists)
             return
 
-        return set(square.x, square.y, piece)
+        this@BoardData.value[square.value] = piece.value
     }
 
     fun setUnsafe(x: Int, y: Int, piece: Piece) {
@@ -64,7 +64,7 @@ value class BoardData(val value: IntArray) {
     }
 
     fun setUnsafe(square: Square, piece: Piece) {
-        this@BoardData.value[square.x + (square.y shl 3)] = piece.value
+        this@BoardData.value[square.value] = piece.value
     }
 
     fun atUnsafe(x: Int, y: Int): Piece {
@@ -72,7 +72,7 @@ value class BoardData(val value: IntArray) {
     }
 
     fun atUnsafe(square: Square): Piece {
-        return Piece(value[square.x + (square.y shl 3)])
+        return Piece(value[square.value])
     }
 
     fun at(x: Int, y: Int): Piece {
@@ -80,9 +80,6 @@ value class BoardData(val value: IntArray) {
     }
 
     fun at(square: Square): Piece {
-        if (!square.exists)
-            return Piece.EMPTY
-
-        return get(square.x, square.y)
+        return this[square]
     }
 }
