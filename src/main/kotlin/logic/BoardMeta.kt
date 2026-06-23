@@ -151,7 +151,7 @@ value class BoardMeta(val value: ULong) {
 
         fun fromFen(fen: String, whiteKing: Square, blackKing: Square): BoardMeta {
             val (toPlay, castlingAvailability, enPassantSquare, halfMoveClock, fullMoveClock) =
-                fen.split(' ', limit = 5)
+                fen.trim().split(' ', limit = 5)
 
             val toPlayPlayer = when (toPlay.lowercase()) {
                 "w" -> Player.WHITE

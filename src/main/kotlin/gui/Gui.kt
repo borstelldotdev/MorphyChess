@@ -21,7 +21,6 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
-import java.io.File
 
 class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener, KeyListener {
     companion object {
@@ -45,18 +44,19 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
         }
 
         var selectedSquare: Square? = null
-        var moveFromSquare: Square? = null
-        var moveToSquare:   Square? = null
+        val highlightedSquares: MutableList<Square> = mutableListOf()
 
-        val BACKGROUND_COLOR =              Color(48, 48, 48)
-        val LIGHT_SQUARE_COLOR =            Color(235, 210, 175)
-        val DARK_SQUARE_COLOR =             Color(185, 135, 100)
-        val SELECTED_LIGHT_SQUARE_COLOR =   Color(245, 235, 115)
-        val SELECTED_DARK_SQUARE_COLOR =    Color(220, 190, 75)
-        val SELECTED_SQUARE_OUTLINE =       Color(80, 80, 80)
+        val BACKGROUND_COLOR =                  Color(48, 48, 48)
+        val LIGHT_SQUARE_COLOR =                Color(235, 210, 175)
+        val DARK_SQUARE_COLOR =                 Color(185, 135, 100)
+        val SELECTED_LIGHT_SQUARE_COLOR =       Color(245, 235, 115)
+        val SELECTED_DARK_SQUARE_COLOR =        Color(220, 190, 75)
+        val SELECTED_SQUARE_OUTLINE =           Color(80, 80, 80)
+        val LIGHT_HIGHLIGHTED_SQUARE_COLOR =    Color(215, 110, 90)
+        val DARK_HIGHLIGHTED_SQUARE_COLOR =     Color(225, 100, 80)
+        val FONT_COLOR =                        Color(238, 238, 238)
+
         const val SELECTED_SQUARE_OUTLINE_WIDTH = 4f
-        val FONT_COLOR =                    Color(238, 238, 238)
-        val ARROW_COLOR =                   Color(255, 0, 0, 192)
     }
 
     constructor() : this(board = Board.startingPosition())
@@ -89,10 +89,20 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
                 )
                     .contains(currentSquare)
 
-                g.color = if (isSelected) {
-                    if (isLight) SELECTED_LIGHT_SQUARE_COLOR else SELECTED_DARK_SQUARE_COLOR
+                val isHighlighted = highlightedSquares.contains(currentSquare)
+
+                g.color = if (isLight) {
+                    when {
+                        isHighlighted   -> LIGHT_HIGHLIGHTED_SQUARE_COLOR
+                        isSelected      -> SELECTED_LIGHT_SQUARE_COLOR
+                        else            -> LIGHT_SQUARE_COLOR
+                    }
                 } else {
-                    if (isLight) LIGHT_SQUARE_COLOR else DARK_SQUARE_COLOR
+                    when {
+                        isHighlighted   -> DARK_HIGHLIGHTED_SQUARE_COLOR
+                        isSelected      -> SELECTED_DARK_SQUARE_COLOR
+                        else            -> DARK_SQUARE_COLOR
+                    }
                 }
 
                 val xPos = boardLeftX + x * Gui.SQUARE_SIZE
@@ -122,39 +132,59 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
 
     }
 
+    fun selectSquare(square: Square) {
+        selectedSquare = square
+        val moves = board.generateLegalMoves()
+        highlightedSquares.clear()
+        for (move in moves) {
+            if (move.from == square) {
+                highlightedSquares.add(move.to)
+            }
+        }
+    }
+
+    fun deselectSquares() {
+        selectedSquare = null
+        highlightedSquares.clear()
+    }
+
     override fun mouseClicked(e: MouseEvent)  {
         requestFocusInWindow() // Re-focus panel to keep allowing keyboard events
 
-        val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4) + 32
-        val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4)
+        val boardLeftX = (width / 2) - (Gui.SQUARE_SIZE * 4)
+        val boardTopY = (height / 2) - (Gui.SQUARE_SIZE * 4) + 32
         // Out of bounds check is integrated into the safe `Square.of()`
         val clickedSquare = Square.of(
             (e.x - boardLeftX) / (Gui.SQUARE_SIZE),
             (e.y - boardTopY) / (Gui.SQUARE_SIZE)
         )
 
-        if (!clickedSquare.exists) return // TODO: process gui buttons
+        if (!clickedSquare.isValid) return // TODO: process gui buttons
 
         when (selectedSquare) {
             null -> {
-                selectedSquare = clickedSquare
+                selectSquare(clickedSquare)
             }
             clickedSquare -> {
-                selectedSquare = null
+                deselectSquares()
             }
             else -> {
-                val move = Move.of(selectedSquare!!, clickedSquare, SpecialMoveType.NONE)
-                board.pushMove(move)
-                // TODO(Perform legality check)
+                var move: Move? = null
 
-                val isLegal = true
-                if (isLegal) {
-                    selectedSquare = null
-                    moveFromSquare = move.from
-                    moveToSquare = move.to
+                for (candidateMove in board.generateLegalMoves()) {
+                    if ((candidateMove.from == selectedSquare) and
+                        (candidateMove.to == clickedSquare)) {
+                        move = candidateMove
+                        break
+                    }
                 }
 
-                // selectedSquare = clickedSquare
+                if (move != null) {
+                    board.pushMove(move)
+                    deselectSquares()
+                } else {
+                    selectSquare(clickedSquare)
+                }
 
             }
         }
@@ -175,8 +205,6 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
     // Keyboard events
     override fun keyPressed(e: KeyEvent?) {
         if (e == null) return
-
-        println(board.stack)
 
         when (e.keyChar) {
             'u' -> {

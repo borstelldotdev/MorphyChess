@@ -90,6 +90,9 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             // TODO: impl more
         }
 
+        // Change turn
+        meta = meta.setToMove(meta.notToMove)
+
         // Undo info is added at push time, to avoid generating unnecessary information during movegen
         stack.addLast(Move.withUndo(move, capturedPiece))
     }
@@ -97,6 +100,9 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     fun popMove(): Move {
         val move = stack.removeLast()
         val fromSquare = move.from; val toSquare = move.to
+
+        // Change turn
+        meta.setToMove(meta.notToMove)
 
         val pieceToMove = data.atUnsafe(toSquare)
         val capturedPiece = move.capturedPiece
@@ -114,7 +120,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     fun genSlidingMoves(from: Square, addTo: MutableList<Move>, slidingPatterns: List<Pair<Int, Int>>) {
         for (slidingPattern in slidingPatterns) {
             var currentSquare = from.offset(slidingPattern.first, slidingPattern.second)
-            while (currentSquare.exists) {
+            while (currentSquare.isValid) {
                 val piece = data.atUnsafe(currentSquare)
 
                 if (piece.owner == meta.toMove)
@@ -134,7 +140,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     fun genKnightMoves(from: Square, addTo: MutableList<Move>) {
         for (slidingPattern in knightSlidingPatterns) {
             val currentSquare = from.offset(slidingPattern.first, slidingPattern.second)
-            if (currentSquare.exists) {
+            if (currentSquare.isValid) {
                 if (data.atUnsafe(currentSquare).owner != meta.toMove)
                     addTo.addLast(Move.of(from, currentSquare, SpecialMoveType.NONE))
             }

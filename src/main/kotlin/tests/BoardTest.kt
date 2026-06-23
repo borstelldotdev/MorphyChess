@@ -5,13 +5,16 @@ package main.tests
 import main.logic.Board
 
 class PerftTestCase(val fen: String, val depth: Int, val expectedNodes: Int) : AbstractTestCase {
-    override fun runTestCase() {
+    override fun runTestCase(): Boolean {
         val board = Board.fromFen(fen)
         val accualNodes = board.perft(depth)
-        assert(accualNodes == expectedNodes) {
-            AssertionError("Perft for $fen failed: expectedNodes: $expectedNodes, " +
+
+        if (expectedNodes != accualNodes) {
+            println("Perft for $fen failed: expectedNodes: $expectedNodes, " +
                     "accualNodes: $accualNodes, depth: $depth")
+            return false
         }
+        return true
     }
 }
 

@@ -1,7 +1,7 @@
 package main.tests
 
 interface AbstractTestCase {
-    fun runTestCase()
+    fun runTestCase(): Boolean
 }
 
 interface AbstractTest {

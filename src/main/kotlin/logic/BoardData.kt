@@ -38,7 +38,7 @@ value class BoardData(val value: IntArray) {
     }
 
     operator fun get(square: Square): Piece {
-        if (!square.exists)
+        if (!square.isValid)
             return Piece.EMPTY
 
         return Piece(value[square.value])
@@ -53,7 +53,7 @@ value class BoardData(val value: IntArray) {
     }
 
     operator fun set(square: Square, piece: Piece) {
-        if (!square.exists)
+        if (!square.isValid)
             return
 
         this@BoardData.value[square.value] = piece.value

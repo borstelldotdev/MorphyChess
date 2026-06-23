@@ -10,7 +10,9 @@ value class Square(val value: Int) {
             Int get() = value and 0b0_0_000_111
     val y:
             Int get() = (value and 0b0_0_111_000) shr 3
-    val exists:
+    val isValid:
+            Boolean get() = (value and 0b1_0_000_000) == 0
+    val isInvalid:
             Boolean get() = (value and 0b1_0_000_000) != 0
 
     fun offset(xOffset: Int, yOffset: Int): Square {
@@ -26,7 +28,7 @@ value class Square(val value: Int) {
     }
 
     override fun toString(): String =
-        if (exists) "Square(${"ABCDEFGH"[x]}${"87654321"[y]})" else "Square(Invalid)"
+        if (isValid) "Square(${"ABCDEFGH"[x]}${"87654321"[y]})" else "Square(Invalid)"
 
     companion object {
         fun of(x: Int, y: Int): Square {
@@ -34,11 +36,11 @@ value class Square(val value: Int) {
                 return NONE
             }
 
-            return Square((y shl 3) or x or 0x80)
+            return Square((y shl 3) or x)
         }
 
         fun ofUnsafe(x: Int, y: Int): Square =
-            Square((y shl 3) or x or 0x80)
+            Square((y shl 3) or x)
 
 
         fun fromString(string: String): Square = Square.of(
@@ -46,6 +48,6 @@ value class Square(val value: Int) {
             y = "87654321".indexOf(string[0])
         )
 
-        val NONE = Square(0)
+        val NONE = Square(0x80)
     }
 }

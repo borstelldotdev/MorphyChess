@@ -9,14 +9,20 @@ fun runTests() {
         PerftTest()
     )
 
+    var totalTestCases = 0
+    var passedTestCases = 0
+
     for (testClass in testClasses) {
         val tests = testClass.generateTestCases()
         println("Executing ${testClass::class.simpleName} (${tests.size} test cases)")
 
         for (testCase in tests) {
-            testCase.runTestCase()
+            totalTestCases ++
+            val result = testCase.runTestCase()
+            if (result) passedTestCases ++
         }
     }
 
     println("Finished executing tests")
+    println("$passedTestCases passed, ${totalTestCases - passedTestCases} failed")
 }
