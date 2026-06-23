@@ -94,6 +94,26 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 meta = meta.setEnPassantSquare(Square.of(fromSquare.x, (fromSquare.y + toSquare.y) shr 1))
             }
 
+            SpecialMoveType.WHITE_CASTLE_KINGSIDE.value -> {
+                data.setUnsafe(Square.F1, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.H1, Piece.EMPTY)
+            }
+
+            SpecialMoveType.WHITE_CASTLE_QUEENSIDE.value -> {
+                data.setUnsafe(Square.D1, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.A1, Piece.EMPTY)
+            }
+
+            SpecialMoveType.BLACK_CASTLE_KINGSIDE.value -> {
+                data.setUnsafe(Square.F8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.H8, Piece.EMPTY)
+            }
+
+            SpecialMoveType.BLACK_CASTLE_QUEENSIDE.value -> {
+                data.setUnsafe(Square.D8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.A8, Piece.EMPTY)
+            }
+
             // TODO: impl more
         }
 
@@ -118,7 +138,28 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
 
         when (move.specialMoveType) {
             SpecialMoveType.NONE.value -> { } // Do nothing
-            // TODO: impl
+
+            SpecialMoveType.WHITE_CASTLE_KINGSIDE.value -> {
+                data.setUnsafe(Square.F1, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.H1, Piece.EMPTY)
+            }
+
+            SpecialMoveType.WHITE_CASTLE_QUEENSIDE.value -> {
+                data.setUnsafe(Square.D1, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.A1, Piece.EMPTY)
+            }
+
+            SpecialMoveType.BLACK_CASTLE_KINGSIDE.value -> {
+                data.setUnsafe(Square.F8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.H8, Piece.EMPTY)
+            }
+
+            SpecialMoveType.BLACK_CASTLE_QUEENSIDE.value -> {
+                data.setUnsafe(Square.D8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.A8, Piece.EMPTY)
+            }
+
+            // TODO: impl more
         }
 
         return move
