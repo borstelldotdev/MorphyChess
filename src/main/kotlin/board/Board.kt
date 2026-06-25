@@ -1,8 +1,14 @@
 //@file:Suppress("SpellCheckingInspection")
 
-package main.logic
+package board
 
-import board.Player
+import main.logic.BoardData
+import main.logic.BoardMeta
+import main.logic.Move
+import main.logic.Piece
+import main.logic.PieceType
+import main.logic.SpecialMoveType
+import main.logic.Square
 
 // A class for representing a board state, as well as the stack of moves that lead to this position
 //
@@ -127,7 +133,21 @@ class Board(
                 data.setUnsafe(Square.A8, Piece.EMPTY)
             }
 
-            // TODO: impl more
+            SpecialMoveType.PROMOTE_KNIGHT.value -> {
+                data.setUnsafe(toSquare, Piece.of(PieceType.KNIGHT, pieceToMove.owner))
+            }
+
+            SpecialMoveType.PROMOTE_BISHOP.value -> {
+                data.setUnsafe(toSquare, Piece.of(PieceType.BISHOP, pieceToMove.owner))
+            }
+
+            SpecialMoveType.PROMOTE_ROOK.value -> {
+                data.setUnsafe(toSquare, Piece.of(PieceType.ROOK, pieceToMove.owner))
+            }
+
+            SpecialMoveType.PROMOTE_QUEEN.value -> {
+                data.setUnsafe(toSquare, Piece.of(PieceType.QUEEN, pieceToMove.owner))
+            }
         }
 
         // TODO: turn into special move types for faster lookups
@@ -161,6 +181,13 @@ class Board(
                     else -> meta
                 }
             }
+        }
+
+        when (toSquare) {
+            Square.A1 -> meta.setWhiteQueensideCastle(false)
+            Square.H1 -> meta.setWhiteKingsideCastle(false)
+            Square.A8 -> meta.setBlackQueensideCastle(false)
+            Square.H8 -> meta.setBlackKingsideCastle(false)
         }
 
         // Change turn
@@ -206,7 +233,12 @@ class Board(
                 data.setUnsafe(Square.A8, Piece.BLACK_ROOK)
             }
 
-            // TODO: impl more
+            SpecialMoveType.PROMOTE_KNIGHT.value,
+            SpecialMoveType.PROMOTE_BISHOP.value,
+            SpecialMoveType.PROMOTE_ROOK.value,
+            SpecialMoveType.PROMOTE_QUEEN.value -> {
+                data.setUnsafe(fromSquare, Piece.of(PieceType.PAWN, pieceToMove.owner))
+            }
         }
 
         data.setUnsafe(toSquare, capturedPiece)
@@ -325,8 +357,10 @@ class Board(
                 (((moveDirection == -1 ) and (from.y == 6)) or
                 ((moveDirection == 1 ) and (from.y == 1))) -> {
                     val ds = from.yOffset(moveDirection shl 1)
-                    if (data[ds].isEmpty) {
-                        addTo.addLast(Move.of(
+                    // Check
+                    if (data[ds].isEmpty and data[from.yOffset(moveDirection)].isEmpty) {
+                        addTo.addLast(
+                            Move.of(
                             from,
                             from.yOffset(moveDirection shl 1),
                             SpecialMoveType.PAWN_MOVE_TWICE
@@ -338,7 +372,8 @@ class Board(
                 ((moveDirection == -1 ) and (from.y == 1))) -> {
                     if (data[from.yOffset(moveDirection)].isEmpty) {
                         for (promotionType in promotionMoveTypes) {
-                            addTo.addLast(Move.of(
+                            addTo.addLast(
+                                Move.of(
                                 from,
                                 from.yOffset(moveDirection),
                                 promotionType
@@ -349,7 +384,8 @@ class Board(
                     if (data[from.offset(1, moveDirection)].owner == pawn.owner.opponent()) {
                         // diagonal capture
                         for (promotionType in promotionMoveTypes) {
-                            addTo.addLast(Move.of(
+                            addTo.addLast(
+                                Move.of(
                                 from,
                                 from.offset(1, moveDirection),
                                 promotionType
@@ -360,7 +396,8 @@ class Board(
                     if (data[from.offset(-1, moveDirection)].owner == pawn.owner.opponent()) {
                         // diagonal capture
                         for (promotionType in promotionMoveTypes) {
-                            addTo.addLast(Move.of(
+                            addTo.addLast(
+                                Move.of(
                                 from,
                                 from.offset(-1, moveDirection),
                                 promotionType
@@ -443,7 +480,8 @@ class Board(
 
             if (data[square.offset(1, moveDirection)]
                 == Piece.of(PieceType.PAWN, meta.toMove)) {
-                moves.addLast(Move.of(
+                moves.addLast(
+                    Move.of(
                     square.offset(1, moveDirection),
                     square,
                     SpecialMoveType.EN_PASSANT
@@ -452,7 +490,8 @@ class Board(
 
             if (data[square.offset(-1, moveDirection)]
                 == Piece.of(PieceType.PAWN, meta.toMove)) {
-                moves.addLast(Move.of(
+                moves.addLast(
+                    Move.of(
                     square.offset(-1, moveDirection),
                     square,
                     SpecialMoveType.EN_PASSANT
@@ -623,7 +662,7 @@ class Board(
         return legalMoves
     }
 
-    fun perft(depth: Int): Int {
+    fun perftBulkCount(depth: Int): Int {
         // PERFormance Test, move path enumeration
         // with bulk counting
         val legalMoves = generateLegalMoves()
@@ -634,17 +673,41 @@ class Board(
         var sum = 0
         for (move in legalMoves) {
             pushMove(move)
+            sum += perftBulkCount(depth - 1)
+            popMove()
+        }
+        return sum
+    }
+
+    fun perft(depth: Int): Int {
+        // PERFormance Test, move path enumeration
+        val legalMoves = generateLegalMoves()
+
+        if (depth == 0)
+            return 1
+
+        var sum = 0
+        for (move in legalMoves) {
+            pushMove(move)
             sum += perft(depth - 1)
             popMove()
         }
         return sum
     }
 
+    fun perftVerbose(depth: Int) {
+        println(this)
 
-    override fun toString(): String {
-        // TODO: fix
-        val str = "main.logic.Board\n  A B C D E F G H I\n\n"
+        var tot = 0
 
-        return  str
+        for (move in generateLegalMoves()) {
+            pushMove(move)
+            val res = perft(depth - 1)
+            tot += res
+            popMove()
+            println("$move: $res")
+        }
+
+        println("Total nodes visited: $tot")
     }
 }

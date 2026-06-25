@@ -29,6 +29,10 @@ value class BoardData(val value: IntArray) {
         }
     }
 
+    override fun toString(): String {
+        return super.toString()
+    }
+
     operator fun get(x: Int, y: Int): Piece {
         if (!(x in 0..7 && y in 0..7)) {
             return Piece.EMPTY

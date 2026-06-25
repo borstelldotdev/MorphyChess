@@ -1,6 +1,6 @@
 package main.gui
 
-import main.logic.Board
+import board.Board
 import main.logic.Move
 import main.logic.Piece
 import main.logic.PieceType

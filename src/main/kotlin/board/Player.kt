@@ -13,8 +13,8 @@ enum class Player(val value: Int) {
 
     override fun toString(): String =
         when (this) {
-            Player.WHITE -> "Player (White)"
-            Player.BLACK -> "Player (Black)"
-            Player.NONE -> "Player (None)"
+            Player.WHITE -> "Player(White)"
+            Player.BLACK -> "Player(Black)"
+            Player.NONE -> "Player(None)"
         }
 }

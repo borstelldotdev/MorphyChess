@@ -1,7 +1,7 @@
 package evaluation
 
 import main.evaluation.AbstractEvaluator
-import main.logic.Board
+import board.Board
 import main.logic.Square
 
 

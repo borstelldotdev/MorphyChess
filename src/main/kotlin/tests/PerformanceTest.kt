@@ -1,6 +1,6 @@
 package tests
 
-import main.logic.Board
+import board.Board
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
@@ -13,7 +13,7 @@ fun performanceTestMovePathEnumeration() {
     val nodes: Int
     val board = Board.startingPosition()
     val time = measureTime {
-        nodes = board.perft(depth)
+        nodes = board.perftBulkCount(depth)
     }
 
     val nodesPerSecond = nodes.toDouble() / time.toDouble(DurationUnit.SECONDS)

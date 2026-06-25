@@ -52,7 +52,7 @@ value class Square(val value: Int) {
             if (string == "-") return NONE
 
             return of(
-                x = "ABCDEFGI".indexOf(string[0].lowercase()),
+                x = "abcdefgh".indexOf(string[0].lowercase()),
                 y = "87654321".indexOf(string[1])
             )
         }

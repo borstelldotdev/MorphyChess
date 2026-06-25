@@ -2,7 +2,7 @@
 
 package main.tests
 
-import main.logic.Board
+import board.Board
 
 class PerftTestCase(val fen: String, val depth: Int, val expectedNodes: Int) : AbstractTestCase {
     override fun runTestCase(): Boolean {
@@ -12,6 +12,7 @@ class PerftTestCase(val fen: String, val depth: Int, val expectedNodes: Int) : A
         if (expectedNodes != accualNodes) {
             println("Perft for $fen failed: expectedNodes: $expectedNodes, " +
                     "accualNodes: $accualNodes, depth: $depth")
+            board.perftVerbose(depth)
             return false
         }
         return true

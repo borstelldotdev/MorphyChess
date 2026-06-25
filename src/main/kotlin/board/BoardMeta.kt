@@ -105,6 +105,31 @@ value class BoardMeta(val value: ULong) {
     fun setBlackQueensideCastle(newValue: Boolean): BoardMeta =
         BoardMeta((value and 0xFF_FF_07_FF_FF_FF_FF_FFuL) or (newValue.toULong(0x00_00_08_00_00_00_00_00uL)))
 
+    fun generateCastlingRightsString(): String {
+        var str = ""
+
+        if (whiteKingsideCastle) str += "K"
+        if (whiteQueensideCastle) str += "Q"
+        if (blackKingsideCastle) str += "k"
+        if (blackQueensideCastle) str += "q"
+
+        if (str.isEmpty()) str = "-"
+
+        return str
+    }
+
+    override fun toString(): String {
+        return """
+        To move: $toMove
+        Full move clock: $fullMove
+        Half move clock: $halfMove
+        En passant square: $enPassantSquare
+        Castling rights: ${generateCastlingRightsString()}
+        White king position: $whiteKing
+        White king position: $blackKing
+        """
+    }
+
     val whiteKing:
             Square
         get() = Square(((value and 0x00_FF_00_00_00_00_00_00uL) shr 48).toInt())
