@@ -6,7 +6,7 @@ import tests.performanceTestMovePathEnumeration
 import uci.UCIInfo
 import uci.UCILoop
 
-const val VERSION = "alpha-1.0"
+const val VERSION = "1.0"
 
 fun main(args: Array<String>) {
     println()

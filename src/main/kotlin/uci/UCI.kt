@@ -1,6 +1,7 @@
 package uci
 
 import board.Board
+import engine.Engine
 import main.gui.Gui
 import javax.swing.WindowConstants
 
@@ -8,6 +9,7 @@ import javax.swing.WindowConstants
 var isRunning = false
 
 var game: Board? = null
+var engine: Engine? = null
 
 fun UCIInfo() {
     println("id name MorphyChess")
@@ -24,6 +26,22 @@ fun newGame() {
     // TODO("reset transposition table")
 }
 
+fun makeMove(moveString: String) {
+    if (game == null) {
+        println("Please set up a position first!")
+        return
+    }
+
+    for (move in game!!.generateLegalMoves()) {
+        if (move.toString() == moveString) {
+            game!!.pushMove(move)
+            return
+        }
+    }
+
+    println("No such move found!")
+}
+
 fun processCommand(line: String) {
     when {
         // Standard UCI commands
@@ -32,13 +50,46 @@ fun processCommand(line: String) {
 
         line.startsWith("isready") -> println("readyok")
 
-        line.startsWith("newgame") -> newGame()
+        line.startsWith("newgame") || line.startsWith("ucinewgame") -> newGame()
 
-        line.startsWith("position startpos") -> newGame()
+        line.startsWith("position") -> {
+            val segments = line.trim().split(' ')
+            val stream = ArrayDeque<String>()
+            stream.addAll(segments)
+            stream.removeFirst() // Get rid of `position`
 
-        line.startsWith("position fen") -> {
-            val fen = line.removePrefix("position fen").trim()
-            game = Board.fromFen(fen)
+            when (stream.removeFirst()) {
+                "fen" -> {
+                    var fen = ""
+                    for (i in 0..6) {
+                        fen += " " + stream.removeFirst()
+                    }
+
+                    game = Board.fromFen(fen.trim())
+                }
+
+                "startpos" -> {
+                    game = Board.startingPosition()
+                }
+
+                else -> { println("Invalid command"); return }
+            }
+
+            while (stream.isNotEmpty()) {
+                val moveString = stream.removeFirst()
+                makeMove(moveString)
+            }
+        }
+
+        line.startsWith("go depth") -> {
+            if (game == null) {
+                println("Please set up a position first!")
+                return
+            }
+            val depth = line.removePrefix("go depth").trim().toInt()
+            val (bestMove, bestEval) = engine!!.bestMove(game!!, depth)
+            println("info score cp $bestEval")
+            println("bestmove $bestMove")
         }
 
 
@@ -91,17 +142,7 @@ fun processCommand(line: String) {
         }
 
         line.startsWith("play") -> {
-            if (game == null) {
-                println("Please set up a position first!")
-                return
-            }
-
-            val moveString = line.removePrefix("go perft").trim()
-            for (move in game!!.generateLegalMoves()) {
-                if (move.toString() == moveString) {
-                    game!!.pushMove(move)
-                }
-            }
+            makeMove(line.removePrefix("play").trim())
         }
 
         line.startsWith("gui") -> {
@@ -118,8 +159,10 @@ fun processCommand(line: String) {
 
 fun UCILoop() {
     val reader = System.`in`.bufferedReader() // To handle EOF properly
+    engine = Engine()
     while (true) {
         val line = reader.readLine()?.trim() ?: break
+        if (line.startsWith("quit")) break
 
         processCommand(line)
     }

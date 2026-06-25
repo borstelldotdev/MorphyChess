@@ -202,7 +202,7 @@ value class PieceSquareTable(val value: Array<IntArray>) {
         fun cloneTable(table: IntArray, staticWeight: Int, flip: Boolean): IntArray {
             val newTable = IntArray(64) { 0 }
             for (sq in 0..63) {
-                newTable[if (flip) flipY(sq) else sq] = table[sq] + staticWeight
+                newTable[if (flip) flipY(sq) else sq] = (table[sq] + staticWeight) * (if (flip) -1 else 1)
             }
             return newTable
         }

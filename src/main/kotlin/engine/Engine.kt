@@ -16,7 +16,7 @@ class Engine(val evaluator: AbstractEvaluator) {
 
     constructor() : this(defaultEvaluator)
 
-    fun bestMove(position: Board, depthPly: Int): Move {
+    fun bestMove(position: Board, depthPly: Int): Pair<Move, Int> {
         var bestEval = Int.MIN_VALUE
         var bestMove = Move.NONE
 
@@ -30,7 +30,7 @@ class Engine(val evaluator: AbstractEvaluator) {
             position.popMove()
         }
 
-        return bestMove
+        return bestMove to bestEval
     }
 
     fun searchEval(position: Board, depthPly: Int): Int {
