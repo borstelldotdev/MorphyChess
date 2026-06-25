@@ -2,6 +2,8 @@
 
 package main.logic
 
+import board.Player
+
 // A class for representing a board state, as well as the stack of moves that lead to this position
 //
 // Two stacks are used to efficiently undo moves:
@@ -84,24 +86,20 @@ class Board(
 
         data.setUnsafe(toSquare, pieceToMove)
         data.setUnsafe(fromSquare, Piece.EMPTY)
+        meta = meta.setEnPassantSquare(Square.NONE)
 
         when (move.specialMoveType) {
             SpecialMoveType.NONE.value -> { }
             SpecialMoveType.EN_PASSANT.value -> {
-                // One will be the square the opponents pawn moved from, one the one it moved to
-                // Therefore, no extra verification is required to ensure we aren't removing other pieces
-                // Using `yOffset` is slower, since we to unpack anyway
+                // The en passant square will have the y coordinate of the square we are moving from
+                // and the x coordinate of the square we are moving to
                 //
                 // We need to store the en passant captured piece to be able to undo properly
                 // Since the captured piece isn't on the capture square, this will not be done automatically
-                if (data.atUnsafe(fromSquare.x, fromSquare.y + 1).isPopulated) {
-                    // Overhead from re-querying is minimal because en passant is rare
-                    capturedPiece = data.atUnsafe(fromSquare.x, fromSquare.y + 1)
-                    data.setUnsafe(fromSquare.x, fromSquare.y + 1, Piece.EMPTY)
-                } else {
-                    capturedPiece = data.atUnsafe(fromSquare.x, fromSquare.y - 1)
-                    data.setUnsafe(fromSquare.x, fromSquare.y - 1, Piece.EMPTY)
-                }
+
+                val capturedSquare = Square.of(toSquare.x, fromSquare.y)
+                capturedPiece = data.atUnsafe(capturedSquare)
+                data.setUnsafe(capturedSquare, Piece.EMPTY)
             }
 
             SpecialMoveType.PAWN_MOVE_TWICE.value -> {
@@ -177,12 +175,16 @@ class Board(
         val fromSquare = move.from; val toSquare = move.to
 
         val pieceToMove = data.atUnsafe(toSquare)
-        val capturedPiece = move.capturedPiece
-        data.setUnsafe(toSquare, capturedPiece)
-        data.setUnsafe(fromSquare, pieceToMove)
+        var capturedPiece = move.capturedPiece
 
         when (move.specialMoveType) {
             SpecialMoveType.NONE.value -> { } // Do nothing
+
+            SpecialMoveType.EN_PASSANT.value -> {
+                val capturedSquare = Square.of(toSquare.x, fromSquare.y)
+                data.setUnsafe(capturedSquare, capturedPiece)
+                capturedPiece = Piece.EMPTY
+            }
 
             SpecialMoveType.WHITE_CASTLE_KINGSIDE.value -> {
                 data.setUnsafe(Square.F1, Piece.EMPTY)
@@ -206,6 +208,9 @@ class Board(
 
             // TODO: impl more
         }
+
+        data.setUnsafe(toSquare, capturedPiece)
+        data.setUnsafe(fromSquare, pieceToMove)
 
         meta = metaStack.removeLast()
 
@@ -254,7 +259,7 @@ class Board(
             }
         }
 
-        // TODO: prevent king from castling through check
+        // To prevent the king from castling through check, we check if moving him one square towards the castle would be legal
 
         when (king.owner) {
             Player.WHITE -> {
@@ -262,9 +267,10 @@ class Board(
                     meta.whiteKingsideCastle and
                     data[Square.F1].isEmpty and
                     data[Square.G1].isEmpty and
-                    !isInCheck(meta.toMove)
+                    !isInCheck(meta.toMove) and
+                    isLegal(Move.WHITE_KINGSIDE_CASTLE_PASSTHROUGH)
                     ) {
-                    addTo.add(Move.WHITE_KINGSIDE_CASTLE)
+                    addTo.addLast(Move.WHITE_KINGSIDE_CASTLE)
                 }
 
                 if (
@@ -272,9 +278,10 @@ class Board(
                     data[Square.D1].isEmpty and
                     data[Square.C1].isEmpty and
                     data[Square.B1].isEmpty and
-                    !isInCheck(meta.toMove)
+                    !isInCheck(meta.toMove) and
+                    isLegal(Move.WHITE_QUEENSIDE_CASTLE_PASSTHROUGH)
                 ) {
-                    addTo.add(Move.WHITE_QUEENSIDE_CASTLE)
+                    addTo.addLast(Move.WHITE_QUEENSIDE_CASTLE)
                 }
             }
             Player.BLACK -> {
@@ -282,9 +289,10 @@ class Board(
                     meta.blackKingsideCastle and
                     data[Square.F8].isEmpty and
                     data[Square.G8].isEmpty and
-                    !isInCheck(meta.toMove)
+                    !isInCheck(meta.toMove) and
+                    isLegal(Move.BLACK_KINGSIDE_CASTLE_PASSTHROUGH)
                 ) {
-                    addTo.add(Move.BLACK_KINGSIDE_CASTLE)
+                    addTo.addLast(Move.BLACK_KINGSIDE_CASTLE)
                 }
 
                 if (
@@ -292,9 +300,10 @@ class Board(
                     data[Square.D8].isEmpty and
                     data[Square.C8].isEmpty and
                     data[Square.B8].isEmpty and
-                    !isInCheck(meta.toMove)
+                    !isInCheck(meta.toMove) and
+                    isLegal(Move.BLACK_QUEENSIDE_CASTLE_PASSTHROUGH)
                 ) {
-                    addTo.add(Move.BLACK_QUEENSIDE_CASTLE)
+                    addTo.addLast(Move.BLACK_QUEENSIDE_CASTLE)
                 }
             }
             else -> {}
@@ -320,7 +329,7 @@ class Board(
                         addTo.addLast(Move.of(
                             from,
                             from.yOffset(moveDirection shl 1),
-                            SpecialMoveType.NONE
+                            SpecialMoveType.PAWN_MOVE_TWICE
                         ))
                     }
                 }
@@ -335,17 +344,51 @@ class Board(
                                 promotionType
                             ))
                         }
-
-                        // Don't add regular non-promotion moves
-                        return
                     }
+
+                    if (data[from.offset(1, moveDirection)].owner == pawn.owner.opponent()) {
+                        // diagonal capture
+                        for (promotionType in promotionMoveTypes) {
+                            addTo.addLast(Move.of(
+                                from,
+                                from.offset(1, moveDirection),
+                                promotionType
+                            ))
+                        }
+                    }
+
+                    if (data[from.offset(-1, moveDirection)].owner == pawn.owner.opponent()) {
+                        // diagonal capture
+                        for (promotionType in promotionMoveTypes) {
+                            addTo.addLast(Move.of(
+                                from,
+                                from.offset(-1, moveDirection),
+                                promotionType
+                            ))
+                        }
+                    }
+
+                    // Don't add regular non-promotion moves
+                    return
                 }
             }
         }
 
+        // En passant is added separately
+
         if (data[from.yOffset(moveDirection)].isEmpty) {
             // one-step-forward move
             addTo.addLast(Move.of(from, from.yOffset(moveDirection), SpecialMoveType.NONE))
+        }
+
+        if (data[from.offset(1, moveDirection)].owner == pawn.owner.opponent()) {
+            // diagonal capture
+            addTo.addLast(Move.of(from, from.offset(1, moveDirection), SpecialMoveType.NONE))
+        }
+
+        if (data[from.offset(-1, moveDirection)].owner == pawn.owner.opponent()) {
+            // diagonal capture
+            addTo.addLast(Move.of(from, from.offset(-1, moveDirection), SpecialMoveType.NONE))
         }
     }
 
@@ -387,6 +430,36 @@ class Board(
                 addMovesForSquare(Square.ofUnsafe(x, y), moves)
             }
         }
+
+        // En passant
+        if (meta.enPassantSquare.isValid) {
+            val moveDirection = when (meta.toMove) {
+                Player.WHITE -> 1
+                Player.BLACK -> -1
+                else -> 0 // Illegal
+            }
+
+            val square = meta.enPassantSquare
+
+            if (data[square.offset(1, moveDirection)]
+                == Piece.of(PieceType.PAWN, meta.toMove)) {
+                moves.addLast(Move.of(
+                    square.offset(1, moveDirection),
+                    square,
+                    SpecialMoveType.EN_PASSANT
+                ))
+            }
+
+            if (data[square.offset(-1, moveDirection)]
+                == Piece.of(PieceType.PAWN, meta.toMove)) {
+                moves.addLast(Move.of(
+                    square.offset(-1, moveDirection),
+                    square,
+                    SpecialMoveType.EN_PASSANT
+                ))
+            }
+        }
+
         return moves
     }
 
@@ -544,7 +617,7 @@ class Board(
         val legalMoves: MutableList<Move> = mutableListOf()
         for (pseudoLegalMove in pseudoLegalMoves) {
             if (isLegal(pseudoLegalMove)) {
-                legalMoves.add(pseudoLegalMove)
+                legalMoves.addLast(pseudoLegalMove)
             }
         }
         return legalMoves

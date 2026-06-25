@@ -4,8 +4,7 @@ import main.logic.Board
 import main.logic.Move
 import main.logic.Piece
 import main.logic.PieceType
-import main.logic.Player
-import main.logic.SpecialMoveType
+import board.Player
 import main.logic.Square
 import java.awt.BasicStroke
 import java.awt.Color

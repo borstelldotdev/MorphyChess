@@ -1,5 +1,7 @@
 package main.logic
 
+import board.Player
+
 
 @JvmInline
 value class BoardMeta(val value: ULong) {

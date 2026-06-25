@@ -1,6 +1,6 @@
 package main.evaluation
 
-import main.logic.Player
+import board.Player
 import main.logic.Square
 
 enum class GameState(val value: Int) {

@@ -43,6 +43,10 @@ value class Move(val value: Int) {
         val BLACK_KINGSIDE_CASTLE = of(Square.E8, Square.G8, SpecialMoveType.BLACK_CASTLE_KINGSIDE)
         val BLACK_QUEENSIDE_CASTLE = of(Square.E8, Square.C8, SpecialMoveType.BLACK_CASTLE_QUEENSIDE)
 
+        val WHITE_KINGSIDE_CASTLE_PASSTHROUGH = of(Square.E1, Square.F1, SpecialMoveType.NONE)
+        val WHITE_QUEENSIDE_CASTLE_PASSTHROUGH = of(Square.E1, Square.D1, SpecialMoveType.NONE)
+        val BLACK_KINGSIDE_CASTLE_PASSTHROUGH = of(Square.E8, Square.F8, SpecialMoveType.NONE)
+        val BLACK_QUEENSIDE_CASTLE_PASSTHROUGH = of(Square.E8, Square.D8, SpecialMoveType.NONE)
     }
 
     val from:

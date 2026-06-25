@@ -48,10 +48,14 @@ value class Square(val value: Int) {
             Square((y shl 3) or x)
 
 
-        fun fromString(string: String): Square = of(
-            x = "ABCDEFGI".indexOf(string[0].lowercase()),
-            y = "87654321".indexOf(string[0])
-        )
+        fun fromString(string: String): Square {
+            if (string == "-") return NONE
+
+            return of(
+                x = "ABCDEFGI".indexOf(string[0].lowercase()),
+                y = "87654321".indexOf(string[1])
+            )
+        }
 
         val NONE = Square(0x80)
         

@@ -50,6 +50,10 @@ fun UCILoop() {
             line.startsWith("list pseudolegalmoves") -> {
                 println(game?.generatePseudoLegalMoves())
             }
+
+            line.startsWith("info boardmeta") -> {
+                println("To move: ${game.meta.toMove}")
+            }
         }
     }
 }

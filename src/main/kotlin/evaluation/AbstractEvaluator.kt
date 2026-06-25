@@ -1,7 +1,7 @@
 package main.evaluation
 
 import main.logic.Board
-import main.logic.Player
+import board.Player
 
 interface AbstractEvaluator {
     fun init()

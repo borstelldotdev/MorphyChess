@@ -1,5 +1,7 @@
 package main.logic
 
+import board.Player
+
 enum class PieceType(val value: Int) {
     PAWN(1),
     KNIGHT(2),
@@ -19,7 +21,8 @@ value class Piece(val value: Int) {
     // MSB <- ... -> LSB
     // ... owner-white(1b) owner-black (1b) type(4b)
 
-    val owner: Player get() = when {
+    val owner: Player
+        get() = when {
         value == 0              -> Player.NONE
         (value and 0x20) != 0   -> Player.WHITE
         (value and 0x10) != 0   -> Player.BLACK
