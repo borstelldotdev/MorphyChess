@@ -20,6 +20,7 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
+import javax.swing.WindowConstants
 
 class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListener, KeyListener {
     companion object {
@@ -222,19 +223,19 @@ class ChessBoard(val board: Board) : JPanel(), MouseListener, MouseMotionListene
 }
 
 
-class Gui{
+class Gui(val board: Board, val frame: JFrame) {
 
     companion object {
         const val SQUARE_SIZE = 60
     }
 
+    constructor() : this(Board.startingPosition(), JFrame("MorphyChess"))
+    constructor(board: Board) : this(board, JFrame("MorphyChess"))
 
     init {
         val totalWidth: Int = SQUARE_SIZE * 12
         val totalHeight: Int = SQUARE_SIZE * 12
 
-        val frame = JFrame("MorphyChess")
-        val board = Board.startingPosition()
         val chessBoard = ChessBoard(board)
 
         frame.apply {

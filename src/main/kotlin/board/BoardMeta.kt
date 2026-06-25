@@ -126,7 +126,7 @@ value class BoardMeta(val value: ULong) {
         En passant square: $enPassantSquare
         Castling rights: ${generateCastlingRightsString()}
         White king position: $whiteKing
-        White king position: $blackKing
+        Black king position: $blackKing
         """
     }
 

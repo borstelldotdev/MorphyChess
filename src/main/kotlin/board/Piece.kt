@@ -46,6 +46,25 @@ value class Piece(val value: Int) {
         return "Piece($owner ${PieceType.fromValue(pieceValue)})"
     }
 
+    fun toChar(): String {
+        return when (this) {
+            WHITE_PAWN -> "P"
+            WHITE_KNIGHT -> "N"
+            WHITE_BISHOP -> "B"
+            WHITE_ROOK -> "R"
+            WHITE_QUEEN -> "Q"
+            WHITE_KING -> "K"
+            BLACK_PAWN -> "p"
+            BLACK_KNIGHT -> "n"
+            BLACK_BISHOP -> "b"
+            BLACK_ROOK -> "r"
+            BLACK_QUEEN -> "q"
+            BLACK_KING -> "k"
+
+            else -> " "
+        }
+    }
+
     companion object {
         fun of(type: PieceType, owner: Player): Piece {
             return Piece(type.value or owner.value)

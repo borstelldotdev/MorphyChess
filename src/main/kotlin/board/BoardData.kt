@@ -30,7 +30,18 @@ value class BoardData(val value: IntArray) {
     }
 
     override fun toString(): String {
-        return super.toString()
+        var str = "  a   b   c   d   e   f   g   h\n"
+        for (y in 0..7) {
+            str += "+---+---+---+---+---+---+---+---+\n"
+            for (x in 0..7) {
+                str += "| ${get(x, y).toChar()} "
+            }
+            str += "| ${8 - y}\n"
+        }
+        str += "+---+---+---+---+---+---+---+---+\n"
+        str += "  a    b   c   d   e   f   g   h\n"
+
+        return str
     }
 
     operator fun get(x: Int, y: Int): Piece {

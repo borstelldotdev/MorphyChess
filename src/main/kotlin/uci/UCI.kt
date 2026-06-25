@@ -1,6 +1,8 @@
 package uci
 
 import board.Board
+import main.gui.Gui
+import javax.swing.WindowConstants
 
 @Volatile
 var isRunning = false
@@ -39,7 +41,10 @@ fun processCommand(line: String) {
             game = Board.fromFen(fen)
         }
 
+
+
         // Nonstandard commands
+
         line.startsWith("list legalmoves") -> {
             println(game?.generateLegalMoves())
         }
@@ -48,13 +53,31 @@ fun processCommand(line: String) {
             println(game?.generatePseudoLegalMoves())
         }
 
-        line.startsWith("info boardmeta") -> {
+        line.startsWith("info board") -> {
             if (game == null) {
                 println("Please set up a position first!")
                 return
             }
 
             println(game)
+        }
+
+        line.startsWith("info boardmeta") -> {
+            if (game == null) {
+                println("Please set up a position first!")
+                return
+            }
+
+            println(game!!.meta)
+        }
+
+        line.startsWith("info boarddata") -> {
+            if (game == null) {
+                println("Please set up a position first!")
+                return
+            }
+
+            println(game!!.data)
         }
 
         line.startsWith("go perft") -> {
@@ -79,6 +102,16 @@ fun processCommand(line: String) {
                     game!!.pushMove(move)
                 }
             }
+        }
+
+        line.startsWith("gui") -> {
+            if (game == null) {
+                println("Please set up a position first!")
+                return
+            }
+
+            val gui = Gui(game!!)
+            gui.frame.defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
         }
     }
 }

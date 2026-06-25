@@ -10,6 +10,7 @@ class PerftTestCase(val fen: String, val depth: Int, val expectedNodes: Int) : A
         val accualNodes = board.perft(depth)
 
         if (expectedNodes != accualNodes) {
+            val board = Board.fromFen(fen)
             println("Perft for $fen failed: expectedNodes: $expectedNodes, " +
                     "accualNodes: $accualNodes, depth: $depth")
             board.perftVerbose(depth)

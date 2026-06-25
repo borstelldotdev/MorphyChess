@@ -183,11 +183,12 @@ class Board(
             }
         }
 
+        // DO NOT TOUCH
         when (toSquare) {
-            Square.A1 -> meta.setWhiteQueensideCastle(false)
-            Square.H1 -> meta.setWhiteKingsideCastle(false)
-            Square.A8 -> meta.setBlackQueensideCastle(false)
-            Square.H8 -> meta.setBlackKingsideCastle(false)
+            Square.A1 -> meta = meta.setWhiteQueensideCastle(false)
+            Square.H1 -> meta = meta.setWhiteKingsideCastle(false)
+            Square.A8 -> meta = meta.setBlackQueensideCastle(false)
+            Square.H8 -> meta = meta.setBlackKingsideCastle(false)
         }
 
         // Change turn
@@ -204,13 +205,15 @@ class Board(
         val pieceToMove = data.atUnsafe(toSquare)
         var capturedPiece = move.capturedPiece
 
+        var restorePiece: Boolean = true
+
         when (move.specialMoveType) {
             SpecialMoveType.NONE.value -> { } // Do nothing
 
             SpecialMoveType.EN_PASSANT.value -> {
                 val capturedSquare = Square.of(toSquare.x, fromSquare.y)
                 data.setUnsafe(capturedSquare, capturedPiece)
-                capturedPiece = Piece.EMPTY
+                capturedPiece = Piece.EMPTY // To prevent the opponents pawn from being restored in th wrong place
             }
 
             SpecialMoveType.WHITE_CASTLE_KINGSIDE.value -> {
@@ -238,11 +241,16 @@ class Board(
             SpecialMoveType.PROMOTE_ROOK.value,
             SpecialMoveType.PROMOTE_QUEEN.value -> {
                 data.setUnsafe(fromSquare, Piece.of(PieceType.PAWN, pieceToMove.owner))
+                restorePiece = false
             }
         }
 
+        // This needs to be below the `when`, otherwise en passant won't work
+
         data.setUnsafe(toSquare, capturedPiece)
-        data.setUnsafe(fromSquare, pieceToMove)
+
+        if (restorePiece)
+            data.setUnsafe(fromSquare, pieceToMove)
 
         meta = metaStack.removeLast()
 
@@ -649,7 +657,9 @@ class Board(
         return res
     }
 
-
+    override fun toString(): String {
+        return meta.toString() + "\n" + data.toString()
+    }
 
     fun generateLegalMoves(): List<Move> {
         val pseudoLegalMoves = generatePseudoLegalMoves()
@@ -706,6 +716,7 @@ class Board(
             tot += res
             popMove()
             println("$move: $res")
+            println(this)
         }
 
         println("Total nodes visited: $tot")
