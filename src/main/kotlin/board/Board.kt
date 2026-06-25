@@ -706,8 +706,6 @@ class Board(
     }
 
     fun perftVerbose(depth: Int) {
-        println(this)
-
         var tot = 0
 
         for (move in generateLegalMoves()) {
@@ -716,7 +714,6 @@ class Board(
             tot += res
             popMove()
             println("$move: $res")
-            println(this)
         }
 
         println("Total nodes visited: $tot")
