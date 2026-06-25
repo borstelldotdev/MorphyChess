@@ -7,7 +7,7 @@ import main.logic.Square
 
 class SimpleEval : AbstractEvaluator {
     override fun init() {
-        TODO("Not yet implemented")
+        println("info string using evaluation function SimpleEval")
     }
 
     override fun eval(position: Board): Int {
