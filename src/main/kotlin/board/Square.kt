@@ -32,6 +32,9 @@ value class Square(val value: Int) {
     override fun toString(): String =
         if (isValid) "Square(${"ABCDEFGH"[x]}${"87654321"[y]})" else "Square(Invalid)"
 
+    fun toCompactString(): String =
+        if (isValid) "${"abcdefgh"[x]}${"87654321"[y]}" else "null"
+
     companion object {
         fun of(x: Int, y: Int): Square {
             if (!(x in 0..7 && y in 0..7)) {

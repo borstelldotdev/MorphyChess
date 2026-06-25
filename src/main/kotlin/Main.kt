@@ -3,6 +3,8 @@ package main
 import main.gui.Gui
 import main.tests.runTests
 import tests.performanceTestMovePathEnumeration
+import uci.UCIInfo
+import uci.UCILoop
 
 const val VERSION = "alpha-1.0"
 
@@ -36,12 +38,8 @@ fun main(args: Array<String>) {
 }
 
 fun mainUCI() {
-    println("id name MorphyChess")
-    println("id author borstelldotdev")
-
-    // TODO("add options")
-
-    println("uciok")
+    UCIInfo()
+    UCILoop()
 }
 
 fun mainVisual() {

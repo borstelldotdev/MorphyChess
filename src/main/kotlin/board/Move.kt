@@ -66,7 +66,17 @@ value class Move(val value: Int) {
         if (isNullMove)
             return "Move(None)"
 
-        return "Move(from: $from, to: $to, captured piece: $capturedPiece" +
-                (if (specialMoveType != SpecialMoveType.NONE.value) "special move type: $specialMoveType)" else "")
+        /*return "Move(from: $from, to: $to, captured piece: $capturedPiece" +
+                (if (specialMoveType != SpecialMoveType.NONE.value) "special move type: $specialMoveType)" else "")*/
+
+        return from.toCompactString() +
+                to.toCompactString() +
+                when (specialMoveType) {
+                    SpecialMoveType.PROMOTE_QUEEN.value -> "q"
+                    SpecialMoveType.PROMOTE_ROOK.value -> "r"
+                    SpecialMoveType.PROMOTE_BISHOP.value -> "b"
+                    SpecialMoveType.PROMOTE_KNIGHT.value -> "n"
+                    else -> ""
+                }
     }
 }

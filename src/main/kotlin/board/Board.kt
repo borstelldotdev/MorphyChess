@@ -2,14 +2,27 @@
 
 package main.logic
 
+// A class for representing a board state, as well as the stack of moves that lead to this position
+//
+// Two stacks are used to efficiently undo moves:
+// Move stack: keeps track of made moves
+// Meta stack: keeps track of board metadata
+//
+// A data stack is not used, since the amount of board data is large and would be slow to copy
+//
 
-class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move>) {
+
+class Board(
+    val data: BoardData, var meta: BoardMeta,
+    val stack: ArrayDeque<Move>, val metaStack: ArrayDeque<BoardMeta>
+) {
+
     companion object {
         fun fromFen(fen: String): Board {
             val (boardStr, metaStr) = fen.split(' ', limit = 2)
             val (boardData, whiteKing, blackKing) = BoardData.fromFen(boardStr)
             val boardMeta = BoardMeta.fromFen(metaStr, whiteKing, blackKing)
-            return Board(boardData, boardMeta, ArrayDeque())
+            return Board(boardData, boardMeta, ArrayDeque(), ArrayDeque())
         }
 
         fun startingPosition(): Board {
@@ -62,6 +75,8 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
     }
 
     fun pushMove(move: Move) {
+        metaStack.addLast(meta)
+
         val fromSquare = move.from; val toSquare = move.to
 
         val pieceToMove = data.atUnsafe(fromSquare)
@@ -78,9 +93,9 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 // Using `yOffset` is slower, since we to unpack anyway
                 //
                 // We need to store the en passant captured piece to be able to undo properly
-                // Since the captured piece insn't on the capture square, this will not be done automaticly
+                // Since the captured piece isn't on the capture square, this will not be done automatically
                 if (data.atUnsafe(fromSquare.x, fromSquare.y + 1).isPopulated) {
-                    // Overhead from re-querrying is minimal beacuase en passant is rare
+                    // Overhead from re-querying is minimal because en passant is rare
                     capturedPiece = data.atUnsafe(fromSquare.x, fromSquare.y + 1)
                     data.setUnsafe(fromSquare.x, fromSquare.y + 1, Piece.EMPTY)
                 } else {
@@ -105,16 +120,49 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             }
 
             SpecialMoveType.BLACK_CASTLE_KINGSIDE.value -> {
-                data.setUnsafe(Square.F8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.F8, Piece.BLACK_ROOK)
                 data.setUnsafe(Square.H8, Piece.EMPTY)
             }
 
             SpecialMoveType.BLACK_CASTLE_QUEENSIDE.value -> {
-                data.setUnsafe(Square.D8, Piece.WHITE_ROOK)
+                data.setUnsafe(Square.D8, Piece.BLACK_ROOK)
                 data.setUnsafe(Square.A8, Piece.EMPTY)
             }
 
             // TODO: impl more
+        }
+
+        // TODO: turn into special move types for faster lookups
+        when (pieceToMove.pieceValue) {
+            PieceType.KING.value -> {
+                meta = when (pieceToMove.owner) {
+                    Player.WHITE -> {
+                        meta
+                            .setWhiteKing(toSquare)
+                            .setWhiteKingsideCastle(false)
+                            .setWhiteQueensideCastle(false)
+                    }
+
+                    Player.BLACK -> {
+                        meta
+                            .setBlackKing(toSquare)
+                            .setBlackKingsideCastle(false)
+                            .setBlackQueensideCastle(false)
+                    }
+
+                    Player.NONE -> meta
+                }
+            }
+
+            PieceType.ROOK.value -> {
+                meta = when (fromSquare) {
+                    Square.A1 -> meta.setWhiteQueensideCastle(false)
+                    Square.H1 -> meta.setWhiteKingsideCastle(false)
+                    Square.A8 -> meta.setBlackQueensideCastle(false)
+                    Square.H8 -> meta.setBlackKingsideCastle(false)
+                    else -> meta
+                }
+            }
         }
 
         // Change turn
@@ -128,9 +176,6 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         val move = stack.removeLast()
         val fromSquare = move.from; val toSquare = move.to
 
-        // Change turn
-        meta = meta.setToMove(meta.notToMove)
-
         val pieceToMove = data.atUnsafe(toSquare)
         val capturedPiece = move.capturedPiece
         data.setUnsafe(toSquare, capturedPiece)
@@ -140,27 +185,29 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             SpecialMoveType.NONE.value -> { } // Do nothing
 
             SpecialMoveType.WHITE_CASTLE_KINGSIDE.value -> {
-                data.setUnsafe(Square.F1, Piece.WHITE_ROOK)
-                data.setUnsafe(Square.H1, Piece.EMPTY)
+                data.setUnsafe(Square.F1, Piece.EMPTY)
+                data.setUnsafe(Square.H1, Piece.WHITE_ROOK)
             }
 
             SpecialMoveType.WHITE_CASTLE_QUEENSIDE.value -> {
-                data.setUnsafe(Square.D1, Piece.WHITE_ROOK)
-                data.setUnsafe(Square.A1, Piece.EMPTY)
+                data.setUnsafe(Square.D1, Piece.EMPTY)
+                data.setUnsafe(Square.A1, Piece.WHITE_ROOK)
             }
 
             SpecialMoveType.BLACK_CASTLE_KINGSIDE.value -> {
-                data.setUnsafe(Square.F8, Piece.WHITE_ROOK)
-                data.setUnsafe(Square.H8, Piece.EMPTY)
+                data.setUnsafe(Square.F8, Piece.EMPTY)
+                data.setUnsafe(Square.H8, Piece.BLACK_ROOK)
             }
 
             SpecialMoveType.BLACK_CASTLE_QUEENSIDE.value -> {
-                data.setUnsafe(Square.D8, Piece.WHITE_ROOK)
-                data.setUnsafe(Square.A8, Piece.EMPTY)
+                data.setUnsafe(Square.D8, Piece.EMPTY)
+                data.setUnsafe(Square.A8, Piece.BLACK_ROOK)
             }
 
             // TODO: impl more
         }
+
+        meta = metaStack.removeLast()
 
         return move
     }
@@ -350,7 +397,11 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             Player.NONE -> Square.NONE
         }
 
-
+        val checkingPlayer = when (player) {
+            Player.WHITE -> Player.BLACK
+            Player.BLACK -> Player.WHITE
+            Player.NONE -> Player.NONE
+        }
 
         // Bishop + Queen checks
 
@@ -360,10 +411,11 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 val piece = data.atUnsafe(currentSquare)
 
                 if (piece.isPopulated) {
-                    if ((piece.owner == meta.toMove) and
+                    if ((piece.owner == checkingPlayer) and
                         ((piece.pieceValue == PieceType.BISHOP.value) or
                                 (piece.pieceValue == PieceType.QUEEN.value))) {
-                            return true
+                        // println("Checker: $currentSquare")
+                        return true
                     }
 
                     break
@@ -382,9 +434,10 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 val piece = data.atUnsafe(currentSquare)
 
                 if (piece.isPopulated) {
-                    if ((piece.owner == meta.toMove) and
+                    if ((piece.owner == checkingPlayer) and
                         ((piece.pieceValue == PieceType.ROOK.value) or
                                 (piece.pieceValue == PieceType.QUEEN.value))) {
+                        // println("Checker: $currentSquare")
                         return true
                     }
 
@@ -404,9 +457,10 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 val piece = data[currentSquare]
                 if (
                     piece.isPopulated and
-                    (piece.owner == meta.toMove) and
+                    (piece.owner == checkingPlayer) and
                     (piece.pieceValue == PieceType.KNIGHT.value)
                     ) {
+                    // println("Checker: $currentSquare")
                     return true
                 }
             }
@@ -418,11 +472,13 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
             val currentSquare = king.offset(slidingPattern.first, slidingPattern.second)
             if (currentSquare.isValid) {
                 val piece = data[currentSquare]
-                // Opponent check is redundant here, since a player can't have two kings
+                // Never mind
                 if (
                     piece.isPopulated and
+                    (piece.owner == checkingPlayer) and
                     (piece.pieceValue == PieceType.KING.value)
                 ) {
+                    // println("Checker: $currentSquare")
                     return true
                 }
             }
@@ -435,27 +491,35 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
                 // To allow `val` usage
                 run {
                     val pos = king.offset(1, -1)
-                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN))
+                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN)) {
+                        // println("Checker: $pos")
                         return true
+                    }
                 }
 
                 run {
                     val pos = king.offset(-1, -1)
-                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN))
+                    if (pos.isValid and (data[pos] == Piece.BLACK_PAWN)) {
+                        // println("Checker: $pos")
                         return true
+                    }
                 }
             }
             Player.BLACK -> {
                 run {
                     val pos = king.offset(1, 1)
-                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN))
+                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN)) {
+                        // println("Checker: $pos")
                         return true
+                    }
                 }
 
                 run {
                     val pos = king.offset(-1, 1)
-                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN))
+                    if (pos.isValid and (data[pos] == Piece.WHITE_PAWN)) {
+                        // println("Checker: $pos")
                         return true
+                    }
                 }
             }
             else -> {return false}
@@ -469,6 +533,7 @@ class Board(val data: BoardData, var meta: BoardMeta, val stack: ArrayDeque<Move
         pushMove(move)
         val res = !isInCheck(meta.notToMove)
         popMove()
+
         return res
     }
 
